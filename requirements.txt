@@ -1,0 +1,5 @@
+black
+python-dotenv
+setuptools
+wheel
+twine
