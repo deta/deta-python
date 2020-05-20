@@ -6,31 +6,20 @@ import typing
 import urllib.error
 
 
-def decode_key(key):
-    """ TODO: regex validate key. The project_key has this format: "a0abcxyz_somerandomstring"
-        "a" is the region (used by the backend)
-        "0" is a reserved flag, might be used by the backend
-        "abcxyz" is the project id.
-        "_" is a separator
-        "somerandomstring..." is the actual secret part of the key.
-    """
-    frags = key.split("_")
-    return frags[1], frags[0][2:], key[0], key[1]
-
-
 class Base:
     def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
         self.name = name
         self.project_id = project_id
         if project_key:
-            frags = decode_key(project_key)
             self.project_key = project_key
-            self.project_id = frags[1]
+            try:
+                self.project_id = project_key.split("_")[0]
+            except Exception:
+                raise Exception("Invalid Project Key")
 
-        host = host or os.getenv("DETA_BASE_HOST")
-        assert host, "No host is provided, the can't do API calls."
+        host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
         self.client = http.client.HTTPSConnection(host, timeout=3)
-        self.base_path = "/{0}/{1}".format(self.project_id, self.name)
+        self.base_path = "/v1/{0}/{1}".format(self.project_id, self.name)
 
     def _request(self, path: str, method: str, data: dict = None):
         url = self.base_path + path
