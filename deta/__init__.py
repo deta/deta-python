@@ -1,7 +1,6 @@
 import http.client
 import json
 import os
-import time
 import typing
 import urllib.error
 
@@ -113,24 +112,22 @@ class Base:
         self,
         query: typing.Union[dict, list] = None,
         *,
-        limit: int = 2000,
         buffer: int = None,
+        pages: int = 10,
     ) -> typing.Generator:
         """
         fetch items from the database.
-            `query` is an optional filter or list of filters. Without filter, it will return the whole db.
-                TODO: query docs.
-            
-        Returns a generator with all the result, We will paginate the request based on `buffer
+            `query` is an optional filter or list of filters. Without filter, it will return the whole db.            
+        Returns a generator with all the result, We will paginate the request based on `buffer`.
         """
         last = True
         code = 200
         counter = 0
-        while code == 200 and last and limit > counter:
+        while code == 200 and last and pages > counter:
             code, res = self._fetch(query, buffer, last)
             items = res["items"]
             last = res["paging"].get("last")
-            counter += len(items)
+            counter += 1
             yield items
 
 

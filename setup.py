@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="deta",
-    version="0.2",
+    version="0.4",
     description="Deta lib for Python 3",
     url="http://github.com/deta/deta-python",
     author="Deta",

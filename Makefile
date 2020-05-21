@@ -1,4 +1,4 @@
-.PHONY: test build publish
+.PHONY: test build publish clean
 
 test:
 	python -m unittest tests
@@ -8,3 +8,6 @@ build:
 
 publish:
 	python -m twine upload dist/*
+
+clean:
+	rm -rf dist build deta.egg.egg-info

@@ -73,7 +73,7 @@ class TestBaseMethods(unittest.TestCase):
         res1 = next(self.db.fetch({"value": "test"}))
         res2 = next(self.db.fetch({"valuexyz": "test_none_existing_value"}))
         res3 = next(self.db.fetch(buffer=3))
-        res4 = list(self.db.fetch(buffer=1, limit=4))
+        res4 = list(self.db.fetch(buffer=1, pages=4))
         res5 = next(self.db.fetch({"value.name": self.item4["value"]["name"]}))
         res6 = next(self.db.fetch({"value?gte": 7}))
         res7 = next(self.db.fetch([{"value?gt": 6}, {"value?lt": 50}]))
