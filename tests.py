@@ -11,7 +11,7 @@ load_dotenv()
 class TestBaseMethods(unittest.TestCase):
     def setUp(self):
         deta = Deta(os.getenv("DETA_BASE_PROJECT_KEY"))
-        self.db = deta.Base("kjwhdeiuwehdfiuw")
+        self.db = deta.Base("test")
         self.item1 = {"key": "existing1", "value": "test"}
         self.item2 = {"key": "existing2", "value": 7}
         self.item3 = {"key": "existing3", "value": 44}
@@ -84,6 +84,35 @@ class TestBaseMethods(unittest.TestCase):
         self.assertTrue(len(res5) > 0)
         self.assertTrue(len(res6) == 2)
         self.assertTrue(len(res7) == 2)
+
+    def test_update(self):
+        self.assertIsNone(self.db.update({"value.name": "spongebob"}, "existing4"))
+        expectedItem = {"key": "existing4", "value": {"name": "spongebob"}}
+        self.assertEqual(self.db.get("existing4"), expectedItem)
+
+        self.assertIsNone(
+            self.db.update(
+                {"value.name": self.db.util.trim(), "value.age": 32}, "existing4"
+            )
+        )
+        expectedItem = {"key": "existing4", "value": {"age": 32}}
+        self.assertEqual(self.db.get("existing4"), expectedItem)
+
+        # key does not exist
+        self.assertRaises(Exception, self.db.update, {"value": "test"}, "doesNotExist")
+        # deleting a key
+        self.assertRaises(
+            Exception,
+            self.db.update,
+            {"value": "test", "key": self.db.util.trim()},
+            "existing4",
+        )
+        # updating a key
+        self.assertRaises(Exception, self.db.update, {"key": "test"}, "existing4")
+        # upper hierarchy does not exist
+        self.assertRaises(Exception, self.db.update, {"profile.age": 32}, "existing4")
+        # no attributes specified
+        self.assertRaises(Exception, self.db.update, {}, "existing4")
 
 
 if __name__ == "__main__":
