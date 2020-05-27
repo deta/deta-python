@@ -19,6 +19,7 @@ class Base:
         host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
         self.client = http.client.HTTPSConnection(host, timeout=3)
         self.base_path = "/v1/{0}/{1}".format(self.project_id, self.name)
+        self.util = Util()
 
     def _request(self, path: str, method: str, data: dict = None):
         url = self.base_path + path
@@ -130,6 +131,25 @@ class Base:
             counter += 1
             yield items
 
+    def update(self, updates: dict, key: str):
+        """
+        update an item in the database
+        `updates` specifies the attribute names and values to update,add or remove 
+        `key` is the kye of the item to be updated
+        """
+        payload = {"set": {}, "delete": []}
+        for attr, value in updates.items():
+            if isinstance(value, Util.Trim):
+                payload["delete"].append(attr)
+            else:
+                payload["set"][attr] = value
+
+        code, _ = self._request("/items/{}".format(key), "PATCH", payload)
+        if code == 200:
+            return None
+        elif code == 404:
+            raise Exception("Key '{}' not found".format(key))
+
 
 class Deta:
     def __init__(
@@ -140,3 +160,11 @@ class Deta:
 
     def Base(self, name: str, host: str = None):
         return Base(name, self.project_key, self.project_id, host)
+
+
+class Util:
+    class Trim:
+        pass
+
+    def trim(self):
+        return self.Trim()
