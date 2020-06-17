@@ -9,6 +9,12 @@ try:
 except ImportError:
     import json
 
+try:
+    from detalib.app import App
+    app = App()
+except Exception:
+    pass
+
 
 class Deta:
     def __init__(
