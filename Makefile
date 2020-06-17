@@ -3,6 +3,9 @@
 test:
 	python -m unittest tests
 
+test_email:
+	python -m unittest tests.TestSendEmail
+
 build:
 	python setup.py sdist bdist_wheel
 
