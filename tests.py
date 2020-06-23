@@ -1,6 +1,6 @@
 import os
 import unittest
-from deta import Deta
+from deta import Deta, send_email
 from timeit import timeit
 from dotenv import load_dotenv
 
@@ -8,9 +8,27 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+class TestSendEmail(unittest.TestCase):
+    def setUp(self):
+        self.deta = Deta()
+
+    def test_function(self):
+        self.assertIsNone(
+            send_email("mustafa@deta.sh", "Hello from test", "this is a test!")
+        )
+
+    def test_method(self):
+        self.assertIsNone(
+            self.deta.send_email(
+                "mustafa@deta.sh", "Hello from test", "this is a test!"
+            )
+        )
+
+
 class TestBaseMethods(unittest.TestCase):
     def setUp(self):
-        deta = Deta(os.getenv("DETA_BASE_PROJECT_KEY"))
+        key = os.getenv("DETA_PROJECT_KEY")
+        deta = Deta(key)
         self.db = deta.Base("test")
         self.item1 = {"key": "existing1", "value": "test"}
         self.item2 = {"key": "existing2", "value": 7}
