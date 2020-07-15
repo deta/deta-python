@@ -49,10 +49,7 @@ class Base:
 
         # close connection if socket is closed
         if os.environ.get("DETA_RUNTIME") == "true" and self._is_socket_closed():
-            try:
-                self.client.close()
-            except:
-                raise
+            self.client.close()
 
         self.client.request(
             method,
