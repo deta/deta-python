@@ -1,5 +1,7 @@
 import http.client
 import os
+import socket
+import struct
 import typing
 import urllib.error
 
