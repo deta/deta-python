@@ -32,28 +32,32 @@ class Base:
         self.base_path = "/v1/{0}/{1}".format(self.project_id, self.name)
         self.util = Util()
 
+    def _is_socket_closed(self):
+        if not self.client.sock:
+            return True
+        fmt = "B"*7+"I"*21
+        tcp_info = struct.unpack(fmt, self.client.sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_INFO, 92))
+        # 8 = CLOSE_WAIT
+        if tcp_info[0] == 8:
+            return True 
+            
     def _request(self, path: str, method: str, data: dict = None):
         url = self.base_path + path
 
-        res = None
-        try:
-            self.client.request(
-                method,
-                url,
-                headers={"X-API-Key": self.project_key, "Content-Type": "application/json"},
-                body=json.dumps(data),
-            )
-            res = self.client.getresponse()
-        # retry once on remote disconnected errors
-        except http.client.RemoteDisconnected:
-            self.client.request(
-                method,
-                url,
-                headers={"X-API-Key": self.project_key, "Content-Type": "application/json"},
-                body=json.dumps(data),
-            )
-            res = self.client.getresponse()
-         
+        # close connection if socket is closed 
+        if os.environ.get("DETA_RUNTIME") == "true" and self._is_socket_closed():
+            try:
+                self.client.close()
+            except Exception as e:
+                raise e
+
+        self.client.request(
+            method,
+            url,
+            headers={"X-API-Key": self.project_key, "Content-Type": "application/json"},
+            body=json.dumps(data),
+        )
+        res = self.client.getresponse()
         status = res.status
         payload = res.read()
         # print(status, res.reason, payload)
