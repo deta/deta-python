@@ -35,21 +35,24 @@ class Base:
     def _is_socket_closed(self):
         if not self.client.sock:
             return True
-        fmt = "B"*7+"I"*21
-        tcp_info = struct.unpack(fmt, self.client.sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_INFO, 92))
+        fmt = "B" * 7 + "I" * 21
+        tcp_info = struct.unpack(
+            fmt, self.client.sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_INFO, 92)
+        )
         # 8 = CLOSE_WAIT
-        if tcp_info[0] == 8:
-            return True 
-            
+        if len(tcp_info) > 0 and tcp_info[0] == 8:
+            return True
+        return False
+
     def _request(self, path: str, method: str, data: dict = None):
         url = self.base_path + path
 
-        # close connection if socket is closed 
+        # close connection if socket is closed
         if os.environ.get("DETA_RUNTIME") == "true" and self._is_socket_closed():
             try:
                 self.client.close()
-            except Exception as e:
-                raise e
+            except:
+                raise
 
         self.client.request(
             method,
