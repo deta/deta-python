@@ -14,7 +14,7 @@ except ImportError:
 class Util:
     class Trim:
         pass
-    
+
     class Increment:
         def __init__(self, value=None):
             self.val = value
@@ -26,7 +26,7 @@ class Util:
             self.val = value
             if not isinstance(value, list):
                 self.val = [value]
-    
+
     class Prepend:
         def __init__(self, value):
             self.val = value
@@ -191,7 +191,13 @@ class Base:
         `updates` specifies the attribute names and values to update,add or remove 
         `key` is the kye of the item to be updated
         """
-        payload = {"set": {}, "increment":{}, "append":{}, "prepend":{}, "delete": []}
+        payload = {
+            "set": {},
+            "increment": {},
+            "append": {},
+            "prepend": {},
+            "delete": [],
+        }
         for attr, value in updates.items():
             if isinstance(value, Util.Trim):
                 payload["delete"].append(attr)
