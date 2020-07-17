@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-class TestSendEmail(unittest.TestCase):
+'''class TestSendEmail(unittest.TestCase):
     def setUp(self):
         self.deta = Deta()
 
@@ -22,7 +22,7 @@ class TestSendEmail(unittest.TestCase):
             self.deta.send_email(
                 "mustafa@deta.sh", "Hello from test", "this is a test!"
             )
-        )
+        )'''
 
 
 class TestBaseMethods(unittest.TestCase):
@@ -34,7 +34,8 @@ class TestBaseMethods(unittest.TestCase):
         self.item2 = {"key": "existing2", "value": 7}
         self.item3 = {"key": "existing3", "value": 44}
         self.item4 = {"key": "existing4", "value": {"name": "patrick"}}
-        self.db.put_many([self.item1, self.item2, self.item3, self.item4])
+        self.item5 = {"key": "existing5", "value": 0, "list": ["a"]}
+        self.db.put_many([self.item1, self.item2, self.item3, self.item4, self.item5])
 
     def tearDown(self):
         all_items = next(self.db.fetch())
@@ -101,7 +102,7 @@ class TestBaseMethods(unittest.TestCase):
         self.assertTrue(len(res4) == 4)
         self.assertTrue(len(res5) > 0)
         self.assertTrue(len(res6) == 2)
-        self.assertTrue(len(res7) == 2)
+        self.assertTrue(len(res7) == 3)
 
     def test_update(self):
         self.assertIsNone(self.db.update({"value.name": "spongebob"}, "existing4"))
@@ -115,6 +116,25 @@ class TestBaseMethods(unittest.TestCase):
         )
         expectedItem = {"key": "existing4", "value": {"age": 32}}
         self.assertEqual(self.db.get("existing4"), expectedItem)
+
+        self.assertIsNone(
+            self.db.update(
+                {"list": self.db.util.append(["b", "c"]), "value": self.db.util.increment()}, "existing5"
+            )
+        )
+
+        self.assertIsNone(
+            self.db.update(
+                {
+                    "list": self.db.util.prepend("x"),
+                    "value": self.db.util.increment(2)
+                },
+                "existing5"
+            )
+        )
+        expectedItem = {"key": "existing5", "list":["x", "a", "b", "c"], "value": 3}
+        self.assertEqual(self.db.get("existing5"), expectedItem)
+
 
         # key does not exist
         self.assertRaises(Exception, self.db.update, {"value": "test"}, "doesNotExist")
@@ -131,6 +151,9 @@ class TestBaseMethods(unittest.TestCase):
         self.assertRaises(Exception, self.db.update, {"profile.age": 32}, "existing4")
         # no attributes specified
         self.assertRaises(Exception, self.db.update, {}, "existing4")
+
+        # appending to a key
+        self.assertRaises(Exception, self.db.update, {"key": self.db.util.append("test")}, "existing5")
 
 
 if __name__ == "__main__":

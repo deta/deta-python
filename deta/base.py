@@ -15,8 +15,35 @@ class Util:
     class Trim:
         pass
 
+    class Increment:
+        def __init__(self, value=None):
+            self.val = value
+            if not value:
+                self.val = 1
+
+    class Append:
+        def __init__(self, value):
+            self.val = value
+            if not isinstance(value, list):
+                self.val = [value]
+
+    class Prepend:
+        def __init__(self, value):
+            self.val = value
+            if not isinstance(value, list):
+                self.val = [value]
+
     def trim(self):
         return self.Trim()
+
+    def increment(self, value: typing.Union[int, float] = None):
+        return self.Increment(value)
+
+    def append(self, value: typing.Union[dict, list, str, int, float, bool]):
+        return self.Append(value)
+
+    def prepend(self, value: typing.Union[dict, list, str, int, float, bool]):
+        return self.Prepend(value)
 
 
 class Base:
@@ -164,10 +191,22 @@ class Base:
         `updates` specifies the attribute names and values to update,add or remove 
         `key` is the kye of the item to be updated
         """
-        payload = {"set": {}, "delete": []}
+        payload = {
+            "set": {},
+            "increment": {},
+            "append": {},
+            "prepend": {},
+            "delete": [],
+        }
         for attr, value in updates.items():
             if isinstance(value, Util.Trim):
                 payload["delete"].append(attr)
+            elif isinstance(value, Util.Increment):
+                payload["increment"][attr] = value.val
+            elif isinstance(value, Util.Append):
+                payload["append"][attr] = value.val
+            elif isinstance(value, Util.Prepend):
+                payload["prepend"][attr] = value.val
             else:
                 payload["set"][attr] = value
 

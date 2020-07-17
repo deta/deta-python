@@ -5,3 +5,4 @@ test.py
 build
 *.egg-info
 dist
+testEnv
