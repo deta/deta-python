@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-'''class TestSendEmail(unittest.TestCase):
+"""class TestSendEmail(unittest.TestCase):
     def setUp(self):
         self.deta = Deta()
 
@@ -22,7 +22,7 @@ load_dotenv()
             self.deta.send_email(
                 "mustafa@deta.sh", "Hello from test", "this is a test!"
             )
-        )'''
+        )"""
 
 
 class TestBaseMethods(unittest.TestCase):
@@ -34,7 +34,7 @@ class TestBaseMethods(unittest.TestCase):
         self.item2 = {"key": "existing2", "value": 7}
         self.item3 = {"key": "existing3", "value": 44}
         self.item4 = {"key": "existing4", "value": {"name": "patrick"}}
-        self.item5 = {"key": "existing5", "value": 0, "list": ["a"]}
+        self.item5 = {"key": "%@#//#!#)#$_", "value": 0, "list": ["a"]}
         self.db.put_many([self.item1, self.item2, self.item3, self.item4, self.item5])
 
     def tearDown(self):
@@ -119,22 +119,22 @@ class TestBaseMethods(unittest.TestCase):
 
         self.assertIsNone(
             self.db.update(
-                {"list": self.db.util.append(["b", "c"]), "value": self.db.util.increment()}, "existing5"
+                {
+                    "list": self.db.util.append(["b", "c"]),
+                    "value": self.db.util.increment(),
+                },
+                "%@#//#!#)#$_",
             )
         )
 
         self.assertIsNone(
             self.db.update(
-                {
-                    "list": self.db.util.prepend("x"),
-                    "value": self.db.util.increment(2)
-                },
-                "existing5"
+                {"list": self.db.util.prepend("x"), "value": self.db.util.increment(2)},
+                "%@#//#!#)#$_",
             )
         )
-        expectedItem = {"key": "existing5", "list":["x", "a", "b", "c"], "value": 3}
-        self.assertEqual(self.db.get("existing5"), expectedItem)
-
+        expectedItem = {"key": "%@#//#!#)#$_", "list": ["x", "a", "b", "c"], "value": 3}
+        self.assertEqual(self.db.get("%@#//#!#)#$_"), expectedItem)
 
         # key does not exist
         self.assertRaises(Exception, self.db.update, {"value": "test"}, "doesNotExist")
@@ -153,7 +153,12 @@ class TestBaseMethods(unittest.TestCase):
         self.assertRaises(Exception, self.db.update, {}, "existing4")
 
         # appending to a key
-        self.assertRaises(Exception, self.db.update, {"key": self.db.util.append("test")}, "existing5")
+        self.assertRaises(
+            Exception,
+            self.db.update,
+            {"key": self.db.util.append("test")},
+            "%@#//#!#)#$_",
+        )
 
 
 if __name__ == "__main__":
