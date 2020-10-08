@@ -4,6 +4,7 @@ import socket
 import struct
 import typing
 import urllib.error
+from urllib.parse import quote 
 
 try:
     import orjson as json
@@ -87,13 +88,16 @@ class Base:
         res = self.client.getresponse()
         status = res.status
         payload = res.read()
-        # print(status, res.reason, payload)
 
         if status in [200, 201, 207, 404]:
             return status, json.loads(payload) if status != 404 else None
         raise urllib.error.HTTPError(url, status, res.reason, res.headers, res.fp)
 
     def get(self, key: str) -> dict:
+        if key == "": raise ValueError("Key is empty")
+
+        # encode key
+        key = quote(key, safe='')
         _, res = self._request("/items/{}".format(key), "GET")
         return res or None
 
@@ -101,6 +105,10 @@ class Base:
         """Delete an item from the database
         key: the key of item to be deleted
         """
+        if key == "": raise ValueError("Key is empty")
+
+        # encode key
+        key = quote(key, safe='')
         _, _ = self._request("/items/{}".format(key), "DELETE")
         return None
 
@@ -191,6 +199,9 @@ class Base:
         `updates` specifies the attribute names and values to update,add or remove 
         `key` is the kye of the item to be updated
         """
+
+        if key == "": raise ValueError("Key is empty")
+
         payload = {
             "set": {},
             "increment": {},
@@ -210,7 +221,8 @@ class Base:
             else:
                 payload["set"][attr] = value
 
-        code, _ = self._request("/items/{}".format(key), "PATCH", payload)
+        encoded_key = quote(key, safe='')
+        code, _ = self._request("/items/{}".format(encoded_key), "PATCH", payload)
         if code == 200:
             return None
         elif code == 404:
