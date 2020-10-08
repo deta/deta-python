@@ -4,7 +4,7 @@ import socket
 import struct
 import typing
 import urllib.error
-from urllib.parse import quote 
+from urllib.parse import quote
 
 try:
     import orjson as json
@@ -94,10 +94,11 @@ class Base:
         raise urllib.error.HTTPError(url, status, res.reason, res.headers, res.fp)
 
     def get(self, key: str) -> dict:
-        if key == "": raise ValueError("Key is empty")
+        if key == "":
+            raise ValueError("Key is empty")
 
         # encode key
-        key = quote(key, safe='')
+        key = quote(key, safe="")
         _, res = self._request("/items/{}".format(key), "GET")
         return res or None
 
@@ -105,10 +106,11 @@ class Base:
         """Delete an item from the database
         key: the key of item to be deleted
         """
-        if key == "": raise ValueError("Key is empty")
+        if key == "":
+            raise ValueError("Key is empty")
 
         # encode key
-        key = quote(key, safe='')
+        key = quote(key, safe="")
         _, _ = self._request("/items/{}".format(key), "DELETE")
         return None
 
@@ -200,7 +202,8 @@ class Base:
         `key` is the kye of the item to be updated
         """
 
-        if key == "": raise ValueError("Key is empty")
+        if key == "":
+            raise ValueError("Key is empty")
 
         payload = {
             "set": {},
@@ -221,7 +224,7 @@ class Base:
             else:
                 payload["set"][attr] = value
 
-        encoded_key = quote(key, safe='')
+        encoded_key = quote(key, safe="")
         code, _ = self._request("/items/{}".format(encoded_key), "PATCH", payload)
         if code == 200:
             return None

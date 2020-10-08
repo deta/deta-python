@@ -11,6 +11,7 @@ except ImportError:
 
 try:
     from detalib.app import App
+
     app = App()
 except Exception:
     pass

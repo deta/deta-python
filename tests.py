@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-'''class TestSendEmail(unittest.TestCase):
+"""class TestSendEmail(unittest.TestCase):
     def setUp(self):
         self.deta = Deta()
 
@@ -22,7 +22,7 @@ load_dotenv()
             self.deta.send_email(
                 "mustafa@deta.sh", "Hello from test", "this is a test!"
             )
-        )'''
+        )"""
 
 
 class TestBaseMethods(unittest.TestCase):
@@ -119,22 +119,22 @@ class TestBaseMethods(unittest.TestCase):
 
         self.assertIsNone(
             self.db.update(
-                {"list": self.db.util.append(["b", "c"]), "value": self.db.util.increment()}, "%@#//#!#)#$_"
+                {
+                    "list": self.db.util.append(["b", "c"]),
+                    "value": self.db.util.increment(),
+                },
+                "%@#//#!#)#$_",
             )
         )
 
         self.assertIsNone(
             self.db.update(
-                {
-                    "list": self.db.util.prepend("x"),
-                    "value": self.db.util.increment(2)
-                },
-                "%@#//#!#)#$_"
+                {"list": self.db.util.prepend("x"), "value": self.db.util.increment(2)},
+                "%@#//#!#)#$_",
             )
         )
-        expectedItem = {"key": "%@#//#!#)#$_", "list":["x", "a", "b", "c"], "value": 3}
+        expectedItem = {"key": "%@#//#!#)#$_", "list": ["x", "a", "b", "c"], "value": 3}
         self.assertEqual(self.db.get("%@#//#!#)#$_"), expectedItem)
-
 
         # key does not exist
         self.assertRaises(Exception, self.db.update, {"value": "test"}, "doesNotExist")
@@ -153,7 +153,12 @@ class TestBaseMethods(unittest.TestCase):
         self.assertRaises(Exception, self.db.update, {}, "existing4")
 
         # appending to a key
-        self.assertRaises(Exception, self.db.update, {"key": self.db.util.append("test")}, "%@#//#!#)#$_")
+        self.assertRaises(
+            Exception,
+            self.db.update,
+            {"key": self.db.util.append("test")},
+            "%@#//#!#)#$_",
+        )
 
 
 if __name__ == "__main__":
