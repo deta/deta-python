@@ -117,6 +117,8 @@ class Base:
     def insert(self, data: typing.Union[dict, list, str, int, bool], key: str = None):
         if not isinstance(data, dict):
             data = {"value": data}
+        else:
+            data = data.copy()
 
         if key:
             data["key"] = key
@@ -135,6 +137,8 @@ class Base:
 
         if not isinstance(data, dict):
             data = {"value": data}
+        else:
+            data = data.copy()
 
         if key:
             data["key"] = key

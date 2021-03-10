@@ -44,9 +44,11 @@ class TestBaseMethods(unittest.TestCase):
         self.db.client.close()
 
     def test_put(self):
+        item = {"msg": "hello"}
         resp = {"key": "one", "msg": "hello"}
-        self.assertEqual(self.db.put({"msg": "hello"}, "one"), resp)
-        self.assertEqual(self.db.put({"key": "one", "msg": "hello"}), resp)
+        self.assertEqual(self.db.put(item, "one"), resp)
+        self.assertEqual(self.db.put(item, "one"), resp)
+        self.assertEqual({"msg": "hello"}, item)
         self.assertEqual(set(self.db.put("Hello").keys()), set(["key", "value"]))
         self.assertEqual(set(self.db.put(1).keys()), set(["key", "value"]))
         self.assertEqual(set(self.db.put(True).keys()), set(["key", "value"]))
@@ -72,9 +74,11 @@ class TestBaseMethods(unittest.TestCase):
         self.db.put_many([i for i in range(26)])
 
     def test_insert(self):
+        item = {"msg": "hello"}
         self.assertEqual(
-            set(self.db.insert({"msg": "hello"}).keys()), set(["key", "msg"])
+            set(self.db.insert(item).keys()), set(["key", "msg"])
         )
+        self.assertEqual({"msg": "hello"}, item)
 
     @unittest.expectedFailure
     def test_insert_fail(self):
