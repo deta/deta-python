@@ -12,6 +12,9 @@ jobs:
       # Get the code into the container
       - name: Checkout
         uses: actions/checkout@v2
+      # Get dependencies
+      - name: Python Dependency Installation
+        uses: py-actions/py-dependency-install@v2.1.0
       ## Lint the code
       #- name: Python Linter
       #  uses: sunnysid3up/python-linter@v0.1-beta.7
@@ -30,7 +33,6 @@ jobs:
       # Test the code
       - name: Test code
         run: |
-          python3 -m pip install -U -r requirements.txt
           python3 tests.py
 
       
