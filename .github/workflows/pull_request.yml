@@ -14,22 +14,12 @@ jobs:
         uses: actions/checkout@v2
       # Get dependencies
       - name: Python Dependency Installation
-        uses: py-actions/py-dependency-install@v2.1.0
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
       ## Lint the code
-      #- name: Python Linter
-      #  uses: sunnysid3up/python-linter@v0.1-beta.7
-      ## Lint the code part 2 - electric boogaloo
-      #- name: Python Linter
-      #  uses: actions/setup-python@v2
-      #  with:
-      #    python-version: "3.8"
-      #- name: Run flake8
-      #  uses: julianwachholz/flake8-action@v1.1.0
-      #  with:
-      #    checkName: "Python Lint"
-      #    path: path/to/files
-      #  env:
-      #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Python linters Black Check
+        uses: jose-lpa/python-black-check-action@1.0.0
       # Test the code
       - name: Test code
         run: |
