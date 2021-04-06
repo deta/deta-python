@@ -17,6 +17,8 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.x'
+      - name: Install dotenv
+        run: sudo apt install python3-dotenv
       ### Lint the code
       #- name: Python linters Black Check
       #  uses: jose-lpa/python-black-check-action@1.0.0
