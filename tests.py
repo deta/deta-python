@@ -27,7 +27,7 @@ load_dotenv()
 
 class TestBaseMethods(unittest.TestCase):
     def setUp(self):
-        key = os.getenv("TEST_PROJECT_KEY")
+        key = os.getenv("DETA_PROJECT_KEY")
         deta = Deta(key)
         self.db = deta.Base("test")
         self.item1 = {"key": "existing1", "value": "test"}
