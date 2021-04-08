@@ -27,9 +27,12 @@ load_dotenv()
 
 class TestBaseMethods(unittest.TestCase):
     def setUp(self):
-        key = os.getenv("DETA_PROJECT_KEY")
+        key = os.getenv("DETA_SDK_TEST_PROJECT_KEY")
+        name = os.getenv("DETA_SDK_TEST_BASE_NAME")
+        self.assertIsNotNone(key)
+        self.assertIsNotNone(name)
         deta = Deta(key)
-        self.db = deta.Base("test")
+        self.db = deta.Base(str(name))
         self.item1 = {"key": "existing1", "value": "test"}
         self.item2 = {"key": "existing2", "value": 7}
         self.item3 = {"key": "existing3", "value": 44}
