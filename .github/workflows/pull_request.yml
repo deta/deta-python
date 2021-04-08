@@ -1,0 +1,25 @@
+name: Lint on pull request
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  full_ci:
+    runs-on: ubuntu-18.04
+    steps:
+      # Get the code into the container
+      - name: Checkout
+        uses: actions/checkout@v2
+      # Lint the code
+      - name: Python linters Black Check
+        uses: jose-lpa/python-black-check-action@1.0.0
+      # Test the code
+      - name: Test code
+        env:
+          DETA_SDK_TEST_PROJECT_KEY: ${{secrets.DETA_SDK_TEST_PROJECT_KEY}}
+          DETA_SDK_TEST_BASE_NAME: ${{secrets.DETA_SDK_TEST_BASE_NAME}}
+        run: |
+          python3 tests.py
+
+      
