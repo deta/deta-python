@@ -11,13 +11,6 @@ jobs:
       # Get the code into the container
       - name: Checkout
         uses: actions/checkout@v2
-      # Get dependencies
-      - name: Python Dependency Installation
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.7'
-      - name: Install dotenv
-        run: sudo apt install python3-dotenv && python3 -m pip install -U -r requirements.txt
       # Lint the code
       - name: Python linters Black Check
         uses: jose-lpa/python-black-check-action@1.0.0

@@ -2,10 +2,12 @@ import os
 import unittest
 from deta import Deta, send_email
 from timeit import timeit
-from dotenv import load_dotenv
 
-
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except:
+    pass
 
 
 """class TestSendEmail(unittest.TestCase):
