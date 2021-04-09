@@ -1,17 +1,21 @@
 [project]
-name="deta",
-version="0.7",
-description="Deta lib for Python 3",
-url="http://github.com/deta/deta-python",
-author="Deta",
-author_email="hello@deta.sh",
-license="MIT",
-classifiers=[
+name = "deta"
+version = "0.7"
+description = "Deta lib for Python 3"
+homepage = "deta.sh"
+repository = "http://github.com/deta/deta-python"
+documentation = "https://docs.deta.sh/docs/base/sdk/"
+author = "Deta"
+author_email = "hello@deta.sh"
+license = "MIT"
+classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-],
-packages=["deta"],
+    "Operating System :: OS Independent"
+]
+readme = "README.md"
+python = "^3.5"
+packages = ["deta"]
 
 [dev-dependencies]
 black = { }
@@ -23,6 +27,6 @@ twine = { }
 [build-system]
 requires = [
     "setuptools >= 35.0.2",
-    "setuptools_scm >= 2.0.0, <3"
+    "setuptools_scm >= 2.0.0"
 ]
 build-backend = "setuptools.build_meta"
