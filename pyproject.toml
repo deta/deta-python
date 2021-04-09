@@ -2,6 +2,7 @@
 name = "deta"
 version = "0.7"
 description = "Deta lib for Python 3"
+long_description = "Deta SDK for Python"
 homepage = "deta.sh"
 repository = "http://github.com/deta/deta-python"
 documentation = "https://docs.deta.sh/docs/base/sdk/"
