@@ -3,8 +3,8 @@ from setuptools import setup
 setup(
     name="deta",
     use_incremental=True,
-    setup_requires=['incremental'],
-    install_requires=['incremental'],
+    setup_requires=["incremental"],
+    install_requires=["incremental"],
     description="Deta lib for Python 3",
     url="http://github.com/deta/deta-python",
     long_description="Deta SDK for python. Documentation available at https://docs.deta.sh/docs/base/sdk.",
