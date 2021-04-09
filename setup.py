@@ -5,6 +5,8 @@ setup(
     version="0.7",
     description="Deta lib for Python 3",
     url="http://github.com/deta/deta-python",
+    long_description="Deta SDK for Python",
+    repository="https://test.pypi.org/legacy/",
     author="Deta",
     author_email="hello@deta.sh",
     license="MIT",
