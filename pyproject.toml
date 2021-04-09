@@ -14,11 +14,11 @@ classifiers=[
 packages=["deta"],
 
 [dev-dependencies]
-black
-python-dotenv
-setuptools
-wheel
-twine
+black = { }
+python-dotenv = { }
+setuptools = { }
+wheel = { }
+twine = { }
 
 [build-system]
 requires = [
