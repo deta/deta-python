@@ -1,5 +1,6 @@
 name: Lint on pull request
 on:
+  workflow_dispatch:
   pull_request:
     branches:
       - master
@@ -7,6 +8,9 @@ on:
 jobs:
   full_ci:
     runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        python-version: ["3.5","3.6", "3.7", "3.8", "3.9"]
     steps:
       # Get the code into the container
       - name: Checkout
@@ -14,9 +18,11 @@ jobs:
       # Setup Python
       - name: Setup Python
         uses: actions/setup-python@v2
-      # Make sure black is installed
-      - name: Install black
-        run: python3 -m pip install -U black
+        with:
+          python-version: ${{ matrix.python-version }}
+      # Run install script
+      - name: Install dependencies
+        run: "scripts/install.sh"
       # Lint the code
       - name: Lint code with black
         run: python3 -m black .

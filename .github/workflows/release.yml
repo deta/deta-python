@@ -1,0 +1,32 @@
+name: Release
+
+on: 
+  push:
+   branches:
+    - release
+
+jobs:
+  release:
+   runs-on: ubuntu-18.04
+   steps:
+    # Get the code into our container
+    - name: Checkout
+      uses: actions/checkout@v2
+    # Setup Python
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ^3.5
+    # Install dependencies
+    - name: Install dependencies
+      run: "scripts/install.sh"
+    # Build package
+    - name: Build package
+      run: "scripts/build.sh"
+    # Publish with twine
+    - name: Publish with twine
+      run: "scripts/publish.sh"
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+    
