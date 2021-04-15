@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v2
       # Lint the code
       - name: Lint code with black
-        uses: jpetrucciani/black-check@master
+        run: python3 -m black .
       # Test the code
       - name: Test code
         env:

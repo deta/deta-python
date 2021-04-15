@@ -4,6 +4,6 @@
 __pycache__
 test.py
 build
-*.egg-info
+*egg-info
 dist
 testEnv

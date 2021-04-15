@@ -7,3 +7,6 @@ Install from PyPi
 ```sh
 pip install deta
 ```
+
+## How to release
+

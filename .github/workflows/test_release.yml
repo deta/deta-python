@@ -1,5 +1,6 @@
 name: Build, publish and release SDK
 on:
+  workflow_dispatch:
   push:
     branches:
       - release
@@ -22,8 +23,9 @@ jobs:
       # Build
       - name: Build a binary wheel and tarball
         run: python -m build --sdist --wheel --outdir dist/
-      # Publish to PyPI
-      - name: Publish to PyPI
+      # Publish to Test PyPI
+      - name: Publish to Test PyPI
         uses: pypa/gh-action-pypi-publish@master
         with:
-          password: ${{secrets.DETA_PYTHON_REGISTRY_KEY}}
+          password: ${{secrets.TEST_PYPI_API_TOKEN}}
+          repository_url: https://test.pypi.org/legacy/
