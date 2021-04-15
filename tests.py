@@ -5,6 +5,7 @@ from timeit import timeit
 
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except:
     pass
@@ -80,9 +81,7 @@ class TestBaseMethods(unittest.TestCase):
 
     def test_insert(self):
         item = {"msg": "hello"}
-        self.assertEqual(
-            set(self.db.insert(item).keys()), set(["key", "msg"])
-        )
+        self.assertEqual(set(self.db.insert(item).keys()), set(["key", "msg"]))
         self.assertEqual({"msg": "hello"}, item)
 
     @unittest.expectedFailure
@@ -119,9 +118,7 @@ class TestBaseMethods(unittest.TestCase):
         self.assertEqual(self.db.get("existing4"), expectedItem)
 
         self.assertIsNone(
-            self.db.update(
-                {"value.name": self.db.util.trim(), "value.age": 32}, "existing4"
-            )
+            self.db.update({"value.name": self.db.util.trim(), "value.age": 32}, "existing4")
         )
         expectedItem = {"key": "existing4", "value": {"age": 32}}
         self.assertEqual(self.db.get("existing4"), expectedItem)
