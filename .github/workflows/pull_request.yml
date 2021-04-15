@@ -22,7 +22,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       # Run install script
       - name: Install dependencies
-        run: "scripts/install.sh"
+        run: "scripts/install"
       # Lint the code
       - name: Lint code with black
         run: python3 -m black .

@@ -19,13 +19,13 @@ jobs:
         python-version: ^3.5
     # Install dependencies
     - name: Install dependencies
-      run: "scripts/install.sh"
+      run: "scripts/install"
     # Build package
     - name: Build package
-      run: "scripts/build.sh"
+      run: "scripts/build"
     # Publish with twine
     - name: Publish with twine
-      run: "scripts/publish.sh"
+      run: "scripts/publish"
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
