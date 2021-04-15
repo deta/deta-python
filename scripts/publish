@@ -29,4 +29,4 @@ fi
 
 set -x
 
-${PREFIX}twine upload --repository testpypi dist/*
+${PREFIX}twine upload dist/*
