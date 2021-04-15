@@ -7,3 +7,5 @@ build
 *.egg-info
 dist
 testEnv
+venv/
+.venv/
