@@ -11,9 +11,15 @@ jobs:
       # Get the code into the container
       - name: Checkout
         uses: actions/checkout@v2
+      # Setup Python
+      - name: Setup Python
+        uses: actions/setup-python@v2
+      # Make sure black is installed
+      - name: Install black
+        run: python3 -m pip install -U black
       # Lint the code
-      - name: Python linters Black Check
-        uses: jose-lpa/python-black-check-action@1.0.0
+      - name: Lint code with black
+        run: python3 -m black .
       # Test the code
       - name: Test code
         env:
