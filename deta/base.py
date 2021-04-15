@@ -72,7 +72,9 @@ class Base:
             return True
         return False
 
-    def _request(self, path: str, method: str, data: dict = None):
+    def _request(
+        self, path: str, method: str, data: typing.Optional[dict] = None
+    ) -> typing.Tuple[int, typing.Mapping]:
         url = self.base_path + path
 
         # close connection if socket is closed
@@ -93,7 +95,7 @@ class Base:
             return status, json.loads(payload) if status != 404 else None
         raise urllib.error.HTTPError(url, status, res.reason, res.headers, res.fp)
 
-    def get(self, key: str) -> dict:
+    def get(self, key: str) -> typing.Mapping:
         if key == "":
             raise ValueError("Key is empty")
 
@@ -114,7 +116,11 @@ class Base:
         _, _ = self._request("/items/{}".format(key), "DELETE")
         return None
 
-    def insert(self, data: typing.Union[dict, list, str, int, bool], key: str = None):
+    def insert(
+        self,
+        data: typing.Union[dict, list, str, int, bool],
+        key: typing.Optional[str] = None,
+    ):
         if not isinstance(data, dict):
             data = {"value": data}
         else:
@@ -129,7 +135,11 @@ class Base:
         elif code == 409:
             raise Exception("Item with key '{4}' already exists".format(key))
 
-    def put(self, data: typing.Union[dict, list, str, int, bool], key: str = None):
+    def put(
+        self,
+        data: typing.Union[dict, list, str, int, bool],
+        key: typing.Optional[str] = None,
+    ):
         """store (put) an item in the database. Overrides an item if key already exists.
         `key` could be provided as function argument or a field in the data dict.
         If `key` is not provided, the server will generate a random 12 chars key.
@@ -163,7 +173,7 @@ class Base:
         query: typing.Union[dict, list] = None,
         buffer: int = None,
         last: str = None,
-    ) -> typing.Tuple[int, list]:
+    ) -> typing.Tuple[int, typing.Mapping]:
         """This is where actual fetch happens."""
         payload = {
             "limit": buffer,
