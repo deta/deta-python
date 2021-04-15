@@ -2,25 +2,28 @@
 .DEFAULT_GOAL := help
 
 test: # Run Unit Test
-	python -m unittest tests
+	@python3 -m unittest tests
 
 test_email: # Test Send Email
-	python -m unittest tests.TestSendEmail
+	@python3 -m unittest tests.TestSendEmail
 
 build: # Build distribution for SDK
-	python setup.py sdist bdist_wheel
+	@python3 setup.py sdist bdist_wheel
 
 publish: # Publish the package to PyPI
-	python -m twine upload dist/*
+	@python3 -m twine upload dist/*
 
 clean: # Remove distribution packages
-	rm -rf dist build deta.egg.egg-info
+	@rm -rf dist build deta.egg.egg-info
 
 format: # Format using black
-	@black -l 100 .
+	@black .
 
 check: # Check for files to format using black
-	@black -l 100 --check --diff .
+	@black --check .
+
+setup: # Developement setup for the SDK
+	@pip install -e .[dev]
 
 help: # Show this help
 	@echo "Deta Python SDK"
