@@ -17,10 +17,10 @@ clean: # Remove distribution packages
 	rm -rf dist build deta.egg.egg-info
 
 format: # Format using black
-	@black .
+	@black -l 100 .
 
 check: # Check for files to format using black
-	@black --check --diff .
+	@black -l 100 --check --diff .
 
 help: # Show this help
 	@echo "Deta Python SDK"
