@@ -1,12 +1,12 @@
-name: Release
+name: Lint and tag before release
 
 on: 
   push:
-   tags:
-    - '*'
+   branches:
+    - release
 
 jobs:
-  release:
+  lint-and-tag:
    runs-on: ubuntu-18.04
    steps:
     # Get the code into our container
@@ -20,13 +20,6 @@ jobs:
     # Install dependencies
     - name: Install dependencies
       run: "scripts/install"
-    # Build package
-    - name: Build package
-      run: "scripts/build"
-    # Publish with twine
-    - name: Publish with twine
-      run: "scripts/publish"
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-    
+    # Make tag
+    - name: Make git tag
+      run: "scripts/tag"

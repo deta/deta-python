@@ -16,3 +16,5 @@ else
 fi
 
 "$PIP" install -r "$REQUIREMENTS"
+
+sudo apt-get install gh
