@@ -1,6 +1,7 @@
 #!/bin/sh -e
 
 VERSION_FILE="deta/__init__.py"
+SETUP_FILE="setup.py"
 
 if [ -d 'venv' ] ; then
     PREFIX="venv/bin/"
@@ -13,6 +14,12 @@ if [ ! -z "$GITHUB_ACTIONS" ]; then
   git config --local user.name "GitHub Action"
 
   VERSION=`grep __version__ ${VERSION_FILE} | grep -o '[0-9][^"]*'`
+  VERSION_SETUP=`grep version ${SETUP_FILE}| grep -o '[0-9][^"]*'`
+
+  if [ "${VERSION}" != "${VERSION_SETUP}" ] ; then
+    echo "__init__.py version '${VERSION}' did not match setup version '${VERSION_SETUP}'"
+    exit 1
+  fi
 
   if [ "refs/tags/${VERSION}" != "${GITHUB_REF}" ] ; then
     echo "GitHub Ref '${GITHUB_REF}' did not match package version '${VERSION}'"
