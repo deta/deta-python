@@ -23,8 +23,8 @@ jobs:
       run: "scripts/build"
     # Publish with twine
     - name: Publish with twine
-      run: "scripts/publish"
+      run: "scripts/test_publish"
       env:
         TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        TWINE_PASSWORD: ${{ secrets.PYPI_TEST_TOKEN }}
     
