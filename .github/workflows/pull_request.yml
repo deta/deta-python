@@ -25,7 +25,7 @@ jobs:
         run: "scripts/install"
       # Lint the code
       - name: Lint code with black
-        run: python3 -m black .
+        run: make format
       # Test the code
       - name: Test code
         env:
