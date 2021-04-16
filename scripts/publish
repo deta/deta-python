@@ -20,13 +20,8 @@ if [ ! -z "$GITHUB_ACTIONS" ]; then
     echo "__init__.py version '${VERSION}' did not match setup version '${VERSION_SETUP}'"
     exit 1
   fi
-
-  if [ "refs/tags/${VERSION}" != "${GITHUB_REF}" ] ; then
-    echo "GitHub Ref '${GITHUB_REF}' did not match package version '${VERSION}'"
-    exit 1
-  fi
 fi
 
-set -x
+#set -x
 
 ${PREFIX}twine upload dist/*

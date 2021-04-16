@@ -20,6 +20,6 @@ if [ ! -z "$GITHUB_ACTIONS" ]; then
   fi
 fi
 
-set -x
+#set -x
 
 ${PREFIX}twine upload --repository testpypi dist/*

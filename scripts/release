@@ -22,6 +22,6 @@ if [ ! -z "$GITHUB_ACTIONS" ]; then
   fi
 fi
 
-set -x
+#set -x
 
-${PREFIX}gh release create "v${VERSION}" -f CHANGELOG.md
+${PREFIX}gh release create "v${VERSION}" -F CHANGELOG.md

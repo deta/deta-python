@@ -16,11 +16,10 @@ try:
 except Exception:
     pass
 
+__version__ = 0.4
 
 class Deta:
-    def __init__(
-        self, project_key: str = None, *, project_id: str = None, host: str = None
-    ):
+    def __init__(self, project_key: str = None, *, project_id: str = None, host: str = None):
         self.project_key = project_key or os.getenv("DETA_PROJECT_KEY")
         self.project_id = project_id
         if not self.project_id:

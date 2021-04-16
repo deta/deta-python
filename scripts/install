@@ -6,7 +6,7 @@
 REQUIREMENTS="requirements.txt"
 VENV="venv"
 
-set -x
+#set -x
 
 if [ -z "$GITHUB_ACTIONS" ]; then
     "$PYTHON" -m venv "$VENV"

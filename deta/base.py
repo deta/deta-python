@@ -130,9 +130,9 @@ class Base:
             raise Exception("Item with key '{4}' already exists".format(key))
 
     def put(self, data: typing.Union[dict, list, str, int, bool], key: str = None):
-        """ store (put) an item in the database. Overrides an item if key already exists.
-            `key` could be provided as function argument or a field in the data dict.
-            If `key` is not provided, the server will generate a random 12 chars key.
+        """store (put) an item in the database. Overrides an item if key already exists.
+        `key` could be provided as function argument or a field in the data dict.
+        If `key` is not provided, the server will generate a random 12 chars key.
         """
 
         if not isinstance(data, dict):
@@ -164,8 +164,7 @@ class Base:
         buffer: int = None,
         last: str = None,
     ) -> typing.Tuple[int, list]:
-        """This is where actual fetch happens.
-        """
+        """This is where actual fetch happens."""
         payload = {
             "limit": buffer,
             "last": last if not isinstance(last, bool) else None,
@@ -186,7 +185,7 @@ class Base:
     ) -> typing.Generator:
         """
         fetch items from the database.
-            `query` is an optional filter or list of filters. Without filter, it will return the whole db.            
+            `query` is an optional filter or list of filters. Without filter, it will return the whole db.
         Returns a generator with all the result, We will paginate the request based on `buffer`.
         """
         last = True
@@ -202,7 +201,7 @@ class Base:
     def update(self, updates: dict, key: str):
         """
         update an item in the database
-        `updates` specifies the attribute names and values to update,add or remove 
+        `updates` specifies the attribute names and values to update,add or remove
         `key` is the kye of the item to be updated
         """
 
