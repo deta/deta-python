@@ -3,7 +3,7 @@
 !.github/
 __pycache__
 test.py
-build
+build/
 *.egg-info
 dist
 testEnv

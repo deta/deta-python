@@ -1,0 +1,25 @@
+name: Lint and tag before release
+
+on: 
+  push:
+   branches:
+    - release
+
+jobs:
+  lint-and-tag:
+   runs-on: ubuntu-18.04
+   steps:
+    # Get the code into our container
+    - name: Checkout
+      uses: actions/checkout@v2
+    # Setup Python
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ^3.5
+    # Install dependencies
+    - name: Install dependencies
+      run: "scripts/install"
+    # Make tag
+    - name: Make git tag
+      run: "scripts/tag"
