@@ -104,7 +104,16 @@ class Drive(_Object):
         self.base_path = "/v1/{0}/{1}".format(self.project_id, self.name)
         self.util = Util()
 
-
+    def list(self, limit:int=1000, prefix:str=None) -> typing.Generator:
+        last = True
+        code = 200
+        counter = 0
+        while code == 200 and last and pages > counter:
+            code, res = self._fetch(query, buffer, last)
+            items = res["items"]
+            last = res["paging"].get("last")
+            counter += 1
+            yield items
 
 class Base(_Object):
     def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
