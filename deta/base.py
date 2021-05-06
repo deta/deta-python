@@ -46,6 +46,19 @@ class Util:
     def prepend(self, value: typing.Union[dict, list, str, int, float, bool]):
         return self.Prepend(value)
 
+class Drive:
+    def __init__(self, drive_name:str, project_key:str, project_id:str):
+        assert drive_name, "Please provide a Drive name. E.g. 'mydrive'"
+        assert project_key, "Please provide a project_key. Check docs.deta.sh"
+        self.drive_name = drive_name
+        self.project_key = project_key
+        self.project_id = project_id
+
+        self.base_path = f"/v1/{self.project_id}/{self.drive_name}"
+        self.util = Util()
+    
+
+
 
 class Base:
     def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
