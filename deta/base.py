@@ -69,9 +69,10 @@ class _Object:
             return True
         return False
 
-    def _request(self, path: str, method: str, data: dict = None):
+    def _request(self, path: str, method: str, data: dict = None, headers:dict=None):
         url = self.base_path + path
-
+        headers = headers or {"X-API-Key": self.project_key,
+                              "Content-Type": "application/json"}
         # close connection if socket is closed
         if os.environ.get("DETA_RUNTIME") == "true" and self._is_socket_closed():
             self.client.close()
@@ -79,8 +80,7 @@ class _Object:
         self.client.request(
             method,
             url,
-            headers={"X-API-Key": self.project_key,
-                     "Content-Type": "application/json"},
+            headers=headers,
             body=json.dumps(data),
         )
         res = self.client.getresponse()
