@@ -1,4 +1,5 @@
 import http.client
+from io import BufferedIOBase
 import os
 import socket
 import struct
@@ -6,6 +7,7 @@ import typing
 import urllib.error
 from urllib.parse import quote, urlencode
 from urllib import request
+import sys
 
 try:
     import orjson as json
@@ -46,6 +48,12 @@ class Util:
 
     def prepend(self, value: typing.Union[dict, list, str, int, float, bool]):
         return self.Prepend(value)
+    
+    def measureSize(self, measurable) -> int:
+        if isinstance(measurable, BufferedIOBase):
+            return sys.getsizeof(measurable.read())
+        else:
+            return sys.getsizeof(measurable)
 
 class _Object:
     def __init__(self, project_key:str, project_id:str, host:str=None):
@@ -69,7 +77,7 @@ class _Object:
             return True
         return False
 
-    def _request(self, path: str, method: str, data: dict = None, headers:dict=None):
+    def _request(self, path: str, method: str, data: typing.Union[str, BufferedIOBase, bytes, dict] = None, headers: dict = None):
         url = self.base_path + path
         headers = headers or {"X-API-Key": self.project_key,
                               "Content-Type": "application/json"}
@@ -77,12 +85,20 @@ class _Object:
         if os.environ.get("DETA_RUNTIME") == "true" and self._is_socket_closed():
             self.client.close()
 
-        self.client.request(
-            method,
-            url,
-            headers=headers,
-            body=json.dumps(data),
-        )
+        if isinstance(data, dict):
+            self.client.request(
+                method,
+                url,
+                headers=headers,
+                body=json.dumps(data),
+            )
+        else:
+            self.client.request(
+                method,
+                url,
+                headers=headers,
+                body=data,
+            )
         res = self.client.getresponse()
         status = res.status
         payload = res.read()
@@ -104,6 +120,20 @@ class Drive(_Object):
         self.base_path = "/v1/{0}/{1}".format(self.project_id, self.name)
         self.util = Util()
 
+    def put(self, name:str, data:typing.Union[str, BufferedIOBase, bytes]=None, *, path:str=None, content_type:str=None) -> str:
+        if (path!=None) and (data!=None):
+            raise Exception("Please only provide data or a path. Not both.")
+        if path != None:
+            data = open(path, 'rb')
+        if self.util.measureSize(data) <= 104857600:  # TODO threshold fine tuning, currently uses 100MB as a limit
+            if isinstance(data, BufferedIOBase):
+                code, res = self._request("/files", "POST", data.read())
+            code, res = self._request("/files", "POST", data)
+            return res["name"]
+        # Multi-part upload 
+        
+        code, res = self._request("/items", "PUT", {"items": [data]})
+        return res["processed"]["items"][0] if res and code == 207 else None
 
 
 class Base(_Object):
