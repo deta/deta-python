@@ -97,6 +97,7 @@ class Drive(_Object):
         assert drive_name, "Please provide a Drive name. E.g 'mydrive"
         assert project_key, "Please provide a project_key. Check docs.deta.sh"
         self.name = drive_name
+        self.project_key = project_key
         self.project_id = project_id
         host = host or os.getenv("DETA_DRIVE_HOST") or "drive.deta.sh"
         self.client = http.client.HTTPSConnection(host, timeout=3)
