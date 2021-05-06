@@ -106,7 +106,7 @@ class Base:
             return status, json.loads(payload) if status != 404 else None
         raise urllib.error.HTTPError(url, status, res.reason, res.headers, res.fp)
 
-    def get(self, key: str) -> dict:
+    def get(self, key: str) -> typing.Optional[dict]:
         if key == "":
             raise ValueError("Key is empty")
 
@@ -115,7 +115,7 @@ class Base:
         _, res = self._request("/items/{}".format(key), "GET")
         return res or None
 
-    def delete(self, key: str) -> bool:
+    def delete(self, key: str) -> typing.Optional[bool]:
         """Delete an item from the database
         key: the key of item to be deleted
         """
@@ -176,7 +176,7 @@ class Base:
         query: typing.Union[dict, list] = None,
         buffer: int = None,
         last: str = None,
-    ) -> typing.Tuple[int, list]:
+    ) -> typing.Optional[typing.Tuple[int, list]]:
         """This is where actual fetch happens."""
         payload = {
             "limit": buffer,
