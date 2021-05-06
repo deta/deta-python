@@ -104,6 +104,11 @@ class Drive(_Object):
         self.base_path = "/v1/{0}/{1}".format(self.project_id, self.name)
         self.util = Util()
 
+    def deleteMany(self, names:typing.List[str]) -> typing.Optional[dict]:
+        assert names, "Names is empty"
+        _, res = self._request("/files", "DELETE", {"names": names})
+        return res
+
 
 
 class Base(_Object):
