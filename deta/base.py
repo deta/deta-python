@@ -104,18 +104,6 @@ class Drive(_Object):
         self.base_path = "/v1/{0}/{1}".format(self.project_id, self.name)
         self.util = Util()
 
-    def delete(self, name: str) -> typing.Optional[str]:
-        """Delete an item from drive
-        name: the name of item to be deleted
-        """
-        if name == "":
-            raise ValueError("Name is empty")
-        # encode key
-        key = quote(name, safe="")
-        status, payload = self._request("/files", "DELETE", {"names":[name]})
-        if (status == 404):
-            return None
-        return payload["deleted"]
 
 
 class Base(_Object):
