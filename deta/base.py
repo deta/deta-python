@@ -4,7 +4,8 @@ import socket
 import struct
 import typing
 import urllib.error
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
+from urllib import request
 
 try:
     import orjson as json
@@ -46,39 +47,22 @@ class Util:
     def prepend(self, value: typing.Union[dict, list, str, int, float, bool]):
         return self.Prepend(value)
 
-class Drive:
-    def __init__(self, drive_name:str, project_key:str, project_id:str):
-        assert drive_name, "Please provide a Drive name. E.g. 'mydrive'"
+class _Object:
+    def __init__(self, project_key:str, project_id:str, host:str=None):
         assert project_key, "Please provide a project_key. Check docs.deta.sh"
-        self.drive_name = drive_name
         self.project_key = project_key
-        self.project_id = project_id
-
-        self.base_path = f"/v1/{self.project_id}/{self.drive_name}"
+        host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
+        self.base_path = "OVERRIDE ME" # TODO there must be a better way
+        self.client = http.client.HTTPSConnection(host, timeout=3)
         self.util = Util()
     
-
-
-
-class Base:
-    def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
-        assert name, "Please provide a Base name. E.g 'mydb'"
-        assert project_key, "Please provide a project_key. Check docs.deta.sh"
-        self.name = name
-        self.project_id = project_id
-        self.project_key = project_key
-
-        host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
-        self.client = http.client.HTTPSConnection(host, timeout=3)
-        self.base_path = "/v1/{0}/{1}".format(self.project_id, self.name)
-        self.util = Util()
-
     def _is_socket_closed(self):
         if not self.client.sock:
             return True
         fmt = "B" * 7 + "I" * 21
         tcp_info = struct.unpack(
-            fmt, self.client.sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_INFO, 92)
+            fmt, self.client.sock.getsockopt(
+                socket.IPPROTO_TCP, socket.TCP_INFO, 92)
         )
         # 8 = CLOSE_WAIT
         if len(tcp_info) > 0 and tcp_info[0] == 8:
@@ -95,7 +79,8 @@ class Base:
         self.client.request(
             method,
             url,
-            headers={"X-API-Key": self.project_key, "Content-Type": "application/json"},
+            headers={"X-API-Key": self.project_key,
+                     "Content-Type": "application/json"},
             body=json.dumps(data),
         )
         res = self.client.getresponse()
@@ -104,7 +89,47 @@ class Base:
 
         if status in [200, 201, 207, 404]:
             return status, json.loads(payload) if status != 404 else None
-        raise urllib.error.HTTPError(url, status, res.reason, res.headers, res.fp)
+        raise urllib.error.HTTPError(
+            url, status, res.reason, res.headers, res.fp)
+
+class Drive(_Object):
+    def __init__(self, drive_name:str=None, project_key:str=None, project_id:str=None, host:str=None):
+        assert drive_name, "Please provide a Drive name. E.g 'mydrive"
+        assert project_key, "Please provide a project_key. Check docs.deta.sh"
+        self.name = drive_name
+        self.project_key = project_key
+        self.project_id = project_id
+        host = host or os.getenv("DETA_DRIVE_HOST") or "drive.deta.sh"
+        self.client = http.client.HTTPSConnection(host, timeout=3)
+        self.base_path = "/v1/{0}/{1}".format(self.project_id, self.name)
+        self.util = Util()
+
+    def delete(self, name: str) -> typing.Optional[str]:
+        """Delete an item from drive
+        name: the name of item to be deleted
+        """
+        if name == "":
+            raise ValueError("Name is empty")
+        # encode key
+        key = quote(name, safe="")
+        status, payload = self._request("/files", "DELETE", {"names":[name]})
+        if (status == 404):
+            return None
+        return payload["deleted"]
+
+
+class Base(_Object):
+    def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
+        assert name, "Please provide a Base name. E.g 'mydb'"
+        assert project_key, "Please provide a project_key. Check docs.deta.sh"
+        self.name = name
+        self.project_id = project_id
+        self.project_key = project_key
+
+        host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
+        self.client = http.client.HTTPSConnection(host, timeout=3)
+        self.base_path = "/v1/{0}/{1}".format(self.project_id, self.name)
+        self.util = Util()
 
     def get(self, key: str) -> dict:
         if key == "":
