@@ -100,19 +100,20 @@ class Drive(_Object):
         self.project_key = project_key
         self.project_id = project_id
         host = host or os.getenv("DETA_DRIVE_HOST") or "drive.deta.sh"
-        self.client = http.client.HTTPSConnection(host, timeout=3)
+        self.client = http.client.HTTPConnection(host, timeout=300)
         self.base_path = "/v1/{0}/{1}".format(self.project_id, self.name)
         self.util = Util()
 
-    def list(self, limit:int=1000, prefix:str=None) -> typing.Generator:
+    def list(self, limit:int=1000, prefix:str=None, last:str=None) -> typing.Generator:
         code = 200
         counter = 0
-        while code == 200:
+        while code == 200 and counter<limit:
             code, res = self._fetch(limit, prefix, last)
-            items = res["names"]
-            last = res["paging"].get("last")
-            counter += 1
-            yield items
+            limit = res["paging"]["limit"]
+            for item in res["names"]:
+                yield item
+                counter += 1
+                last = res["paging"].get("last")
     
     def _fetch(
         self,
@@ -120,7 +121,12 @@ class Drive(_Object):
         prefix:str=None,
         last: str = None,
     ) -> typing.Optional[typing.Tuple[int, list]]:
-        code, res = self._request(f"/files?prefix={prefix}&limit={limit}&last={last}", "GET")
+        url = f"/files?limit={limit}"
+        if prefix != None:
+            url = url+"&prefix={prefix}"
+        if last != None:
+            url = url+"&last={last}"
+        code, res = self._request(url, "GET")
         return code, res
 
 class Base(_Object):
