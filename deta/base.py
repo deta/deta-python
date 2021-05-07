@@ -79,7 +79,10 @@ class _Object:
             return True
         return False
 
-    def _request(self, path: str, method: str, data: typing.Union[str, BufferedIOBase, bytes, dict] = None, headers: dict = None, async:bool=False):
+    async def _async_request(self, path: str, method: str, data: typing.Union[str, BufferedIOBase, bytes, dict] = None, headers: dict = None):
+        return self._request(path=path, method=method, data=data, headers=headers)
+
+    def _request(self, path: str, method: str, data: typing.Union[str, BufferedIOBase, bytes, dict] = None, headers: dict = None):
         url = self.base_path + path
         headers = headers or {"X-API-Key": self.project_key,
                               "Content-Type": "application/json"}
@@ -133,20 +136,24 @@ class Drive(_Object):
             _, res = self._request("/files", "POST", data)
             return res["name"]
         # Multi-part upload 
-        _, res = self._request(f"/uploads?name={name}", "POST")
-        uuid = res["upload_id"]
-        chunk_number = 1
         retry_queue = []
         def _partial_upload():
-                for chunk in iter(partial(data.read, chunk_size), b''):
-                    if (chunk_number == 1) and (self.util.measureSize(chunk) < chunk_size):
-                        # EOF found early, file small enough to send early
-                        _, res = self._request("/files", "POST", data.read())
+            chunk_number = 1
+            uuid = ""
+            for chunk in iter(partial(data.read, chunk_size), b''):
+                if (chunk_number == 1) and (self.util.measureSize(chunk) < chunk_size):
+                    # EOF found early, file small enough to send early
+                    _, res = self._request("/files", "POST", data.read())
+                else:
+                    if (chunk_number == 1):
+                        _, res = self._request(f"/uploads?name={name}", "POST")
+                        uuid = res["upload_id"]
                     try:
-                        _ , res = self._request(f"/uploads/{uuid}/parts?name={name}&part={chunk_number}", "POST", chunk)
+                        _ , res = asyncio.run(self._async_request(f"/uploads/{uuid}/parts?name={name}&part={chunk_number}", "POST", chunk))
                     except Exception as e:
                         print(f"[!] Chunk {chunk_number} of size {chunk_size} failed to upload. Added to retry queue.")
                         retry_queue.append(chunk_number)
+                    chunk_number = chunk_number + 1
                 
         with data:
             _partial_upload()
