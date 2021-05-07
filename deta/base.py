@@ -132,11 +132,9 @@ class Drive(_Object):
             raise Exception("Please only provide data or a path. Not both.")
         if path != None:
             data = open(path, 'rb')
-        # If it's byte or string, it's already in memory, let's just send it, no?
         if not isinstance(data, BufferedIOBase):
             _, res = self._request(f"/files?name={name}", "POST", data, content_type)
             return res["name"]
-        # Multi-part upload 
         retry_queue = []
         def _partial_upload():
             chunk_number = 1
