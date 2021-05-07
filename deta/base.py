@@ -154,21 +154,15 @@ class Drive(_Object):
                         print(f"[!] Chunk {chunk_number} of size {chunk_size} failed to upload. Added to retry queue.")
                         retry_queue.append(chunk_number)
                     chunk_number = chunk_number + 1
-                
+            # Finish upload
+            _, res = self._request(f"/uploads/{uuid}?name={name}", "PATCH")
+            return res["name"]
+
         with data:
             _partial_upload()
             while len(retry_queue) > 0:
                 _partial_upload()
-        
-        # Finish upload
-        _,res = self._request(f"/uploads/{uuid}?name={name}", "PATCH")
-        return res["name"]
-        
-
-
-            
-
-            
+                  
 
 class Base(_Object):
     def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
