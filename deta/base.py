@@ -89,7 +89,13 @@ class _Object:
         payload = res.read()
 
         if status in [200, 201, 207, 404]:
-            return status, json.loads(payload) if status != 404 else None
+            if status == 404:
+                return None
+            try:
+                payload = json.loads(payload)
+            except:
+                pass
+            return status, payload
         raise urllib.error.HTTPError(
             url, status, res.reason, res.headers, res.fp)
 
@@ -101,18 +107,21 @@ class Drive(_Object):
         self.project_key = project_key
         self.project_id = project_id
         host = host or os.getenv("DETA_DRIVE_HOST") or "localhost:9015" # "drive.deta.sh"
-        self.client = http.client.HTTPSConnection(host, timeout=3)
+        self.client = http.client.HTTPConnection(host, timeout=300)
         self.base_path = "/v1/{0}/{1}".format(self.project_id, self.name)
         self.util = Util()
 
     def get(self, name:str=None) -> typing.Optional[BufferedIOBase]:
         assert name, "Please provide the name of the file to get."
         code,res = self._request(f"/files/download?name={name}", "GET")
+        print(code)
+        print(res)
         if code == 404:
             return None
-        file_stream = BufferedIOBase()
-        b = BytesIO(res)
-        file_stream.write(b.getbuffer())
+        file_stream = BytesIO()
+        file_stream.write(res)
+        file_stream.seek(0)
+        # Not closing the file here weirds me out, is this ok?
         return file_stream
 
 class Base(_Object):
