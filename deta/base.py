@@ -100,7 +100,7 @@ class Drive(_Object):
         self.project_key = project_key
         self.project_id = project_id
         host = host or os.getenv("DETA_DRIVE_HOST") or "drive.deta.sh"
-        self.client = http.client.HTTPSConnection(host, timeout=3)
+        self.client = http.client.HTTPConnection(host, timeout=300)
         self.base_path = "/v1/{0}/{1}".format(self.project_id, self.name)
         self.util = Util()
 
