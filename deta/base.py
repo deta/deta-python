@@ -1,4 +1,5 @@
 import http.client
+from io import BufferedIOBase, BytesIO
 import os
 import socket
 import struct
@@ -99,12 +100,20 @@ class Drive(_Object):
         self.name = drive_name
         self.project_key = project_key
         self.project_id = project_id
-        host = host or os.getenv("DETA_DRIVE_HOST") or "drive.deta.sh"
+        host = host or os.getenv("DETA_DRIVE_HOST") or "localhost:9015" # "drive.deta.sh"
         self.client = http.client.HTTPSConnection(host, timeout=3)
         self.base_path = "/v1/{0}/{1}".format(self.project_id, self.name)
         self.util = Util()
 
-
+    def get(self, name:str=None) -> typing.Optional[BufferedIOBase]:
+        assert name, "Please provide the name of the file to get."
+        code,res = self._request(f"/files/download?name={name}", "GET")
+        if code == 404:
+            return None
+        file_stream = BufferedIOBase()
+        b = BytesIO(res)
+        file_stream.write(b.getbuffer())
+        return file_stream
 
 class Base(_Object):
     def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
