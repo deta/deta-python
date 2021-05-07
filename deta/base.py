@@ -82,10 +82,11 @@ class _Object:
     async def _async_request(self, path: str, method: str, data: typing.Union[str, BufferedIOBase, bytes, dict] = None, headers: dict = None):
         return self._request(path=path, method=method, data=data, headers=headers)
 
-    def _request(self, path: str, method: str, data: typing.Union[str, BufferedIOBase, bytes, dict] = None, headers: dict = None):
+    def _request(self, path: str, method: str, data: typing.Union[str, BufferedIOBase, bytes, dict] = None, content_type:str=None, headers: dict = None):
         url = self.base_path + path
+        content_type = content_type or "application/json"
         headers = headers or {"X-API-Key": self.project_key,
-                              "Content-Type": "application/json"}
+                              "Content-Type": content_type}
         # close connection if socket is closed
         if os.environ.get("DETA_RUNTIME") == "true" and self._is_socket_closed():
             self.client.close()
@@ -108,7 +109,7 @@ class _Object:
         status = res.status
         payload = res.read()
 
-        if status in [200, 201, 207, 404]:
+        if status in [200, 202, 201, 207, 404]:
             return status, json.loads(payload) if status != 404 else None
         raise urllib.error.HTTPError(
             url, status, res.reason, res.headers, res.fp)
@@ -121,19 +122,19 @@ class Drive(_Object):
         self.project_key = project_key
         self.project_id = project_id
         host = host or os.getenv("DETA_DRIVE_HOST") or "drive.deta.sh"
-        self.client = http.client.HTTPSConnection(host, timeout=3)
+        self.client = http.client.HTTPConnection(host, timeout=300)
         self.base_path = "/v1/{0}/{1}".format(self.project_id, self.name)
         self.util = Util()
 
     def put(self, name:str, data:typing.Union[str, BufferedIOBase, bytes]=None, *, path:str=None, content_type:str=None) -> str:
-        chunk_size = 104857600 # TODO 100MB threshold needs tuning
+        chunk_size = 104857600  # TODO 100MB threshold needs tuning
         if (path!=None) and (data!=None):
             raise Exception("Please only provide data or a path. Not both.")
         if path != None:
             data = open(path, 'rb')
         # If it's byte or string, it's already in memory, let's just send it, no?
         if not isinstance(data, BufferedIOBase):
-            _, res = self._request("/files", "POST", data)
+            _, res = self._request(f"/files?name={name}", "POST", data, content_type)
             return res["name"]
         # Multi-part upload 
         retry_queue = []
@@ -142,11 +143,13 @@ class Drive(_Object):
             uuid = ""
             for chunk in iter(partial(data.read, chunk_size), b''):
                 if (chunk_number == 1) and (self.util.measureSize(chunk) < chunk_size):
-                    # EOF found early, file small enough to send early
-                    _, res = self._request("/files", "POST", data.read())
+                    print(chunk)
+                    _, res = self._request(f"/files?name={name}", "POST", chunk)
                 else:
+                    print(chunk_number)
                     if (chunk_number == 1):
                         _, res = self._request(f"/uploads?name={name}", "POST")
+                        print(res)
                         uuid = res["upload_id"]
                     try:
                         _ , res = asyncio.run(self._async_request(f"/uploads/{uuid}/parts?name={name}&part={chunk_number}", "POST", chunk))
@@ -154,9 +157,8 @@ class Drive(_Object):
                         print(f"[!] Chunk {chunk_number} of size {chunk_size} failed to upload. Added to retry queue.")
                         retry_queue.append(chunk_number)
                     chunk_number = chunk_number + 1
-            # Finish upload
-            _, res = self._request(f"/uploads/{uuid}?name={name}", "PATCH")
-            return res["name"]
+                    _, res = self._request(f"/uploads/{uuid}?name={name}", "PATCH")
+                    return res["name"]
 
         with data:
             _partial_upload()
