@@ -105,15 +105,23 @@ class Drive(_Object):
         self.util = Util()
 
     def list(self, limit:int=1000, prefix:str=None) -> typing.Generator:
-        last = True
         code = 200
         counter = 0
-        while code == 200 and last and pages > counter:
-            code, res = self._fetch(query, buffer, last)
-            items = res["items"]
+        while code == 200:
+            code, res = self._fetch(limit, prefix, last)
+            items = res["names"]
             last = res["paging"].get("last")
             counter += 1
             yield items
+    
+    def _fetch(
+        self,
+        limit:int=1000,
+        prefix:str=None,
+        last: str = None,
+    ) -> typing.Optional[typing.Tuple[int, list]]:
+        code, res = self._request(f"/files?prefix={prefix}&limit={limit}&last={last}", "GET")
+        return code, res
 
 class Base(_Object):
     def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
