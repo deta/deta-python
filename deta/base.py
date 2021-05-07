@@ -8,6 +8,8 @@ import urllib.error
 from urllib.parse import quote, urlencode
 from urllib import request
 import sys
+import asyncio
+from functools import partial
 
 try:
     import orjson as json
@@ -77,7 +79,7 @@ class _Object:
             return True
         return False
 
-    def _request(self, path: str, method: str, data: typing.Union[str, BufferedIOBase, bytes, dict] = None, headers: dict = None):
+    def _request(self, path: str, method: str, data: typing.Union[str, BufferedIOBase, bytes, dict] = None, headers: dict = None, async:bool=False):
         url = self.base_path + path
         headers = headers or {"X-API-Key": self.project_key,
                               "Content-Type": "application/json"}
@@ -121,20 +123,45 @@ class Drive(_Object):
         self.util = Util()
 
     def put(self, name:str, data:typing.Union[str, BufferedIOBase, bytes]=None, *, path:str=None, content_type:str=None) -> str:
+        chunk_size = 104857600 # TODO 100MB threshold needs tuning
         if (path!=None) and (data!=None):
             raise Exception("Please only provide data or a path. Not both.")
         if path != None:
             data = open(path, 'rb')
-        if self.util.measureSize(data) <= 104857600:  # TODO threshold fine tuning, currently uses 100MB as a limit
-            if isinstance(data, BufferedIOBase):
-                code, res = self._request("/files", "POST", data.read())
-            code, res = self._request("/files", "POST", data)
+        # If it's byte or string, it's already in memory, let's just send it, no?
+        if not isinstance(data, BufferedIOBase):
+            _, res = self._request("/files", "POST", data)
             return res["name"]
         # Multi-part upload 
+        _, res = self._request(f"/uploads?name={name}", "POST")
+        uuid = res["upload_id"]
+        chunk_number = 1
+        retry_queue = []
+        def _partial_upload():
+                for chunk in iter(partial(data.read, chunk_size), b''):
+                    if (chunk_number == 1) and (self.util.measureSize(chunk) < chunk_size):
+                        # EOF found early, file small enough to send early
+                        _, res = self._request("/files", "POST", data.read())
+                    try:
+                        _ , res = self._request(f"/uploads/{uuid}/parts?name={name}&part={chunk_number}", "POST", chunk)
+                    except Exception as e:
+                        print(f"[!] Chunk {chunk_number} of size {chunk_size} failed to upload. Added to retry queue.")
+                        retry_queue.append(chunk_number)
+                
+        with data:
+            _partial_upload()
+            while len(retry_queue) > 0:
+                _partial_upload()
         
-        code, res = self._request("/items", "PUT", {"items": [data]})
-        return res["processed"]["items"][0] if res and code == 207 else None
+        # Finish upload
+        _,res = self._request(f"/uploads/{uuid}?name={name}", "PATCH")
+        return res["name"]
+        
 
+
+            
+
+            
 
 class Base(_Object):
     def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
