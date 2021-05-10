@@ -319,9 +319,7 @@ class Base(_Service):
             payload["query"] = query if isinstance(query, list) else [query]
 
         code, res = self._request("/query", "POST", payload)
-        if isinstance(res, list):
-            return code, res
-        raise Exception("Result not of type list; got "+str(type(res))+" instead.")
+        return code, res
 
     def fetch(
         self,
