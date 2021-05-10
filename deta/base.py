@@ -110,13 +110,13 @@ class _Service:
             )
         res = self.client.getresponse()
         status = res.status
+        payload = res.read()
         
         if status in [200, 202, 201, 207, 404]:
             if status == 404:
                 return status, None
             if (no_read):
                 return status, res
-            payload = res.read()
             try:
                 payload = json.loads(payload)
             except:
