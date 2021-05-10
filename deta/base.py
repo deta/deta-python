@@ -140,7 +140,7 @@ class Drive(_Service):
             stream.write(res)
             stream.seek(0)
             return stream
-        raise Exception("Response was not of type bytes; got "+type(res)+" instead.")
+        raise Exception("Response was not of type bytes; got "+str(type(res))+" instead.")
         
 
     def deleteMany(self, names:typing.List[str]) -> typing.Optional[dict]:
@@ -148,7 +148,7 @@ class Drive(_Service):
         _, res = self._request("/files", "DELETE", {"names": names})
         if isinstance(res, dict):
             return res
-        raise Exception("Result not a dict; got "+type(res)+" instead.")
+        raise Exception("Result not a dict; got "+str(type(res))+" instead.")
 
     def delete(self, name: str) -> typing.Optional[str]:
         """Delete an item from drive
@@ -165,7 +165,7 @@ class Drive(_Service):
             if len(payload["failed"]) > 0:
                 raise Exception(f"Deletion failed for: {payload['failed']}")
             return payload["deleted"]
-        raise Exception("Payload was not a dict; got "+type(payload)+" instead.")
+        raise Exception("Payload was not a dict; got "+str(type(payload))+" instead.")
 
     def put(self, name:str, data:typing.Union[str, BufferedIOBase, bytes]=None, *, path:str=None, content_type:str=None) -> str:
         chunk_size = 104857600  # TODO 100MB threshold needs tuning
@@ -177,7 +177,7 @@ class Drive(_Service):
             _, res = self._request(f"/files?name={name}", "POST", data, content_type)
             if isinstance(res, dict):
                 return res["name"]
-            raise Exception("Result not a dict; got "+type(res)+" instead.")
+            raise Exception("Result not a dict; got "+str(type(res))+" instead.")
         chunk_number = 1
         uuid = ""
         for chunk in iter(partial(data.read, chunk_size), b''):
@@ -188,14 +188,14 @@ class Drive(_Service):
                     _, res = self._request(f"/uploads?name={name}", "POST")
                     if isinstance(res, dict):
                         uuid = res["upload_id"]
-                    raise Exception("Result not a dict; got "+type(res)+" instead.")
+                    raise Exception("Result not a dict; got "+str(type(res))+" instead.")
                     
                 _ , res = asyncio.run(self._async_request(f"/uploads/{uuid}/parts?name={name}&part={chunk_number}", "POST", chunk))
                 chunk_number = chunk_number + 1
                 _, res = self._request(f"/uploads/{uuid}?name={name}", "PATCH")
                 if isinstance(res, dict):
                     return str(res["name"])
-                raise Exception("Result not a dict; got "+type(res)+" instead.")
+                raise Exception("Result not a dict; got "+str(type(res))+" instead.")
 
     def list(self, limit:int=1000, prefix:str=None, last:str=None) -> typing.Generator:
         code = 200
@@ -209,7 +209,7 @@ class Drive(_Service):
                     counter += 1
                     last = res["paging"].get("last")
             else:
-                raise Exception("Result is not of type dict; got "+type(res)+" instead.")
+                raise Exception("Result is not of type dict; got "+str(type(res))+" instead.")
     
     def _fetch(
         self,
@@ -225,7 +225,7 @@ class Drive(_Service):
         code, res = self._request(url, "GET")
         if isinstance(res, list):
             return code, res
-        raise Exception("Result is not of type list; got "+type(res)+" instead.")
+        raise Exception("Result is not of type list; got "+str(type(res))+" instead.")
 
 class Base(_Service):
     def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
@@ -245,7 +245,7 @@ class Base(_Service):
         _, res = self._request("/items/{}".format(key), "GET")
         if isinstance(res, dict):
             return res or None
-        raise Exception("Result is not of type dict; got "+type(res)+" instead.")
+        raise Exception("Result is not of type dict; got "+str(type(res))+" instead.")
 
     def delete(self, key: str) -> typing.Optional[bool]:
         """Delete an item from the database
@@ -291,7 +291,7 @@ class Base(_Service):
         code, res = self._request("/items", "PUT", {"items": [data]})
         if isinstance(res, dict) or res == None:
             return res["processed"]["items"][0] if res and code == 207 else None
-        raise Exception("Result not an instance of dict; got "+type(res)+" instead.")
+        raise Exception("Result not an instance of dict; got "+str(type(res))+" instead.")
 
     def put_many(self, items: typing.List[typing.Union[dict, list, str, int, bool]]):
         assert len(items) <= 25, "We can't put more than 25 items at a time."
@@ -323,7 +323,7 @@ class Base(_Service):
         code, res = self._request("/query", "POST", payload)
         if isinstance(res, list):
             return code, res
-        raise Exception("Result not of type list; got "+type(res)+" instead.")
+        raise Exception("Result not of type list; got "+str(type(res))+" instead.")
 
     def fetch(
         self,
@@ -347,7 +347,7 @@ class Base(_Service):
                 last = res["paging"].get("last")
                 counter += 1
                 yield items
-            raise Exception("Response is not of type dict; got "+type(res)+" instead.")
+            raise Exception("Response is not of type dict; got "+str(type(res))+" instead.")
 
     def update(self, updates: dict, key: str):
         """
