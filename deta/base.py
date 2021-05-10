@@ -114,8 +114,6 @@ class Drive(_Object):
     def get(self, name:str=None) -> typing.Optional[BufferedIOBase]:
         assert name, "Please provide the name of the file to get."
         code,res = self._request(f"/files/download?name={name}", "GET")
-        print(code)
-        print(res)
         if code == 404:
             return None
         file_stream = BytesIO()
