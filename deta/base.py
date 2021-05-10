@@ -7,6 +7,9 @@ import typing
 import urllib.error
 from urllib.parse import quote, urlencode
 from urllib import request
+import sys
+import asyncio
+from functools import partial
 
 try:
     import orjson as json
@@ -48,14 +51,17 @@ class Util:
     def prepend(self, value: typing.Union[dict, list, str, int, float, bool]):
         return self.Prepend(value)
 
-class _Object:
-    def __init__(self, project_key:str, project_id:str, host:str=None):
+class _Service:
+    def __init__(self, project_key: str, project_id: str, host: str = None, name: str=None):
         assert project_key, "Please provide a project_key. Check docs.deta.sh"
+        assert name, "Please provide a name."
+        self.name = name
         self.project_key = project_key
+        self.project_id = project_id
+        self.base_path = "/v1/{0}/{1}".format(
+            self.project_id, self.name)
         host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
-        self.base_path = "OVERRIDE ME" # TODO there must be a better way
         self.client = http.client.HTTPSConnection(host, timeout=3)
-        self.util = Util()
     
     def _is_socket_closed(self):
         if not self.client.sock:
@@ -69,26 +75,44 @@ class _Object:
         if len(tcp_info) > 0 and tcp_info[0] == 8:
             return True
         return False
+    
+    def _measure_size(self, measurable) -> int:
+        if isinstance(measurable, BufferedIOBase):
+            return sys.getsizeof(measurable.read())
+        else:
+            return sys.getsizeof(measurable)
 
-    def _request(self, path: str, method: str, data: dict = None, headers:dict=None):
+    async def _async_request(self, path: str, method: str, data: typing.Union[str, BufferedIOBase, bytes, dict] = None, headers: dict = None):
+        return self._request(path=path, method=method, data=data, headers=headers)
+
+    def _request(self, path: str, method: str, data: typing.Union[str, BufferedIOBase, bytes, dict] = None, content_type:str=None, headers: dict = None):
         url = self.base_path + path
+        content_type = content_type or "application/json"
         headers = headers or {"X-API-Key": self.project_key,
-                              "Content-Type": "application/json"}
+                              "Content-Type": content_type}
         # close connection if socket is closed
         if os.environ.get("DETA_RUNTIME") == "true" and self._is_socket_closed():
             self.client.close()
 
-        self.client.request(
-            method,
-            url,
-            headers=headers,
-            body=json.dumps(data),
-        )
+        if isinstance(data, dict):
+            self.client.request(
+                method,
+                url,
+                headers=headers,
+                body=json.dumps(data),
+            )
+        else:
+            self.client.request(
+                method,
+                url,
+                headers=headers,
+                body=data,
+            )
         res = self.client.getresponse()
         status = res.status
         payload = res.read()
-
-        if status in [200, 201, 207, 404]:
+        
+        if status in [200, 202, 201, 207, 404]:
             if status == 404:
                 return None
             try:
@@ -96,20 +120,15 @@ class _Object:
             except:
                 pass
             return status, payload
+
         raise urllib.error.HTTPError(
             url, status, res.reason, res.headers, res.fp)
 
-class Drive(_Object):
+class Drive(_Service):
     def __init__(self, drive_name:str=None, project_key:str=None, project_id:str=None, host:str=None):
+        super().__init__(project_key=project_key, project_id=project_id, host=host,
+                         name=drive_name)
         assert drive_name, "Please provide a Drive name. E.g 'mydrive"
-        assert project_key, "Please provide a project_key. Check docs.deta.sh"
-        self.name = drive_name
-        self.project_key = project_key
-        self.project_id = project_id
-        host = host or os.getenv("DETA_DRIVE_HOST") or "localhost:9015" # "drive.deta.sh"
-        self.client = http.client.HTTPSConnection(host, timeout=300)
-        self.base_path = "/v1/{0}/{1}".format(self.project_id, self.name)
-        self.util = Util()
 
     def get(self, name:str=None) -> typing.Optional[BufferedIOBase]:
         assert name, "Please provide the name of the file to get."
@@ -122,17 +141,81 @@ class Drive(_Object):
         # Not closing the file here weirds me out, is this ok?
         return file_stream
 
-class Base(_Object):
+    def deleteMany(self, names:typing.List[str]) -> typing.Optional[dict]:
+        assert names, "Names is empty"
+        _, res = self._request("/files", "DELETE", {"names": names})
+        return res
+
+    def delete(self, name: str) -> typing.Optional[str]:
+        """Delete an item from drive
+        name: the name of item to be deleted
+        """
+        if name == "":
+            raise ValueError("Name is empty")
+        # encode key
+        key = quote(name, safe="")
+        status, payload = self._request("/files", "DELETE", {"names":[name]})
+        if (status == 404):
+            return None
+        if len(payload["failed"]) > 0:
+            raise Exception(f"Deletion failed for: {payload['failed']}")
+        return payload["deleted"]
+
+    def put(self, name:str, data:typing.Union[str, BufferedIOBase, bytes]=None, *, path:str=None, content_type:str=None) -> str:
+        chunk_size = 104857600  # TODO 100MB threshold needs tuning
+        if (path!=None) and (data!=None):
+            raise Exception("Please only provide data or a path. Not both.")
+        if path != None:
+            data = open(path, 'rb')
+        if not isinstance(data, BufferedIOBase):
+            _, res = self._request(f"/files?name={name}", "POST", data, content_type)
+            return res["name"]
+        chunk_number = 1
+        uuid = ""
+        for chunk in iter(partial(data.read, chunk_size), b''):
+            if (chunk_number == 1) and (self._measure_size(chunk) < chunk_size):
+                _, res = self._request(f"/files?name={name}", "POST", chunk)
+            else:
+                if (chunk_number == 1):
+                    _, res = self._request(f"/uploads?name={name}", "POST")
+                    uuid = res["upload_id"]
+                _ , res = asyncio.run(self._async_request(f"/uploads/{uuid}/parts?name={name}&part={chunk_number}", "POST", chunk))
+                chunk_number = chunk_number + 1
+                _, res = self._request(f"/uploads/{uuid}?name={name}", "PATCH")
+                return str(res["name"])
+
+    def list(self, limit:int=1000, prefix:str=None, last:str=None) -> typing.Generator:
+        code = 200
+        counter = 0
+        while code == 200 and counter<limit:
+            code, res = self._fetch(limit, prefix, last)
+            limit = res["paging"]["limit"]
+            for item in res["names"]:
+                yield item
+                counter += 1
+                last = res["paging"].get("last")
+    
+    def _fetch(
+        self,
+        limit:int=1000,
+        prefix:str=None,
+        last: str = None,
+    ) -> typing.Optional[typing.Tuple[int, list]]:
+        url = f"/files?limit={limit}"
+        if prefix != None:
+            url = url+"&prefix={prefix}"
+        if last != None:
+            url = url+"&last={last}"
+        code, res = self._request(url, "GET")
+        return code, res
+
+class Base(_Service):
     def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
-        assert name, "Please provide a Base name. E.g 'mydb'"
-        assert project_key, "Please provide a project_key. Check docs.deta.sh"
-        self.name = name
-        self.project_id = project_id
-        self.project_key = project_key
+        super().__init__(project_key=project_key, project_id=project_id, host=host,
+                         name=name)
+
 
         host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
-        self.client = http.client.HTTPSConnection(host, timeout=3)
-        self.base_path = "/v1/{0}/{1}".format(self.project_id, self.name)
         self.util = Util()
 
     def get(self, key: str) -> typing.Optional[dict]:
