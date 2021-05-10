@@ -51,12 +51,16 @@ class Util:
     def prepend(self, value: typing.Union[dict, list, str, int, float, bool]):
         return self.Prepend(value)
 
-class _Object:
-    def __init__(self, project_key:str, project_id:str, host:str=None):
+class _Service:
+    def __init__(self, project_key: str, project_id: str, host: str = None, name: str=None):
         assert project_key, "Please provide a project_key. Check docs.deta.sh"
+        assert name, "Please provide a name."
+        self.base_path = "/v1/{0}/{1}".format(
+            self.project_id, self.name)
+        self.name = name
         self.project_key = project_key
+        self.project_id = project_id
         host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
-        self.base_path = "OVERRIDE ME" # TODO there must be a better way
         self.client = http.client.HTTPSConnection(host, timeout=3)
     
     def _is_socket_closed(self):
@@ -113,16 +117,12 @@ class _Object:
         raise urllib.error.HTTPError(
             url, status, res.reason, res.headers, res.fp)
 
-class Drive(_Object):
+class Drive(_Service):
     def __init__(self, drive_name:str=None, project_key:str=None, project_id:str=None, host:str=None):
+        super().__init__(project_key=project_key, project_id=project_id, host=host,
+                         name=drive_name)
         assert drive_name, "Please provide a Drive name. E.g 'mydrive"
-        assert project_key, "Please provide a project_key. Check docs.deta.sh"
-        self.name = drive_name
-        self.project_key = project_key
-        self.project_id = project_id
         host = host or os.getenv("DETA_DRIVE_HOST") or "drive.deta.sh"
-        self.client = http.client.HTTPSConnection(host, timeout=300)
-        self.base_path = "/v1/{0}/{1}".format(self.project_id, self.name)
 
     def put(self, name:str, data:typing.Union[str, BufferedIOBase, bytes]=None, *, path:str=None, content_type:str=None) -> str:
         chunk_size = 104857600  # TODO 100MB threshold needs tuning
@@ -147,19 +147,38 @@ class Drive(_Object):
                 _, res = self._request(f"/uploads/{uuid}?name={name}", "PATCH")
                 return str(res["name"])
 
-                  
+    def list(self, limit:int=1000, prefix:str=None, last:str=None) -> typing.Generator:
+        code = 200
+        counter = 0
+        while code == 200 and counter<limit:
+            code, res = self._fetch(limit, prefix, last)
+            limit = res["paging"]["limit"]
+            for item in res["names"]:
+                yield item
+                counter += 1
+                last = res["paging"].get("last")
+    
+    def _fetch(
+        self,
+        limit:int=1000,
+        prefix:str=None,
+        last: str = None,
+    ) -> typing.Optional[typing.Tuple[int, list]]:
+        url = f"/files?limit={limit}"
+        if prefix != None:
+            url = url+"&prefix={prefix}"
+        if last != None:
+            url = url+"&last={last}"
+        code, res = self._request(url, "GET")
+        return code, res
 
-class Base(_Object):
+class Base(_Service):
     def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
-        assert name, "Please provide a Base name. E.g 'mydb'"
-        assert project_key, "Please provide a project_key. Check docs.deta.sh"
-        self.name = name
-        self.project_id = project_id
-        self.project_key = project_key
+        super().__init__(project_key=project_key, project_id=project_id, host=host,
+                         name=name)
+
 
         host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
-        self.client = http.client.HTTPSConnection(host, timeout=3)
-        self.base_path = "/v1/{0}/{1}".format(self.project_id, self.name)
         self.util = Util()
 
     def get(self, key: str) -> typing.Optional[dict]:
