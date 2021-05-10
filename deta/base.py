@@ -103,7 +103,30 @@ class Drive(_Service):
 
         host = host or os.getenv("DETA_DRIVE_HOST") or "drive.deta.sh"
 
-
+    def list(self, limit:int=1000, prefix:str=None, last:str=None) -> typing.Generator:
+        code = 200
+        counter = 0
+        while code == 200 and counter<limit:
+            code, res = self._fetch(limit, prefix, last)
+            limit = res["paging"]["limit"]
+            for item in res["names"]:
+                yield item
+                counter += 1
+                last = res["paging"].get("last")
+    
+    def _fetch(
+        self,
+        limit:int=1000,
+        prefix:str=None,
+        last: str = None,
+    ) -> typing.Optional[typing.Tuple[int, list]]:
+        url = f"/files?limit={limit}"
+        if prefix != None:
+            url = url+"&prefix={prefix}"
+        if last != None:
+            url = url+"&last={last}"
+        code, res = self._request(url, "GET")
+        return code, res
 
 class Base(_Service):
     def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
