@@ -1,4 +1,5 @@
 import http.client
+from io import BufferedIOBase
 import os
 import socket
 import struct
@@ -6,6 +7,9 @@ import typing
 import urllib.error
 from urllib.parse import quote, urlencode
 from urllib import request
+import sys
+import asyncio
+from functools import partial
 
 try:
     import orjson as json
@@ -71,26 +75,44 @@ class _Service:
         if len(tcp_info) > 0 and tcp_info[0] == 8:
             return True
         return False
+    
+    def _measure_size(self, measurable) -> int:
+        if isinstance(measurable, BufferedIOBase):
+            return sys.getsizeof(measurable.read())
+        else:
+            return sys.getsizeof(measurable)
 
-    def _request(self, path: str, method: str, data: dict = None, headers:dict=None):
+    async def _async_request(self, path: str, method: str, data: typing.Union[str, BufferedIOBase, bytes, dict] = None, headers: dict = None):
+        return self._request(path=path, method=method, data=data, headers=headers)
+
+    def _request(self, path: str, method: str, data: typing.Union[str, BufferedIOBase, bytes, dict] = None, content_type:str=None, headers: dict = None):
         url = self.base_path + path
+        content_type = content_type or "application/json"
         headers = headers or {"X-API-Key": self.project_key,
-                              "Content-Type": "application/json"}
+                              "Content-Type": content_type}
         # close connection if socket is closed
         if os.environ.get("DETA_RUNTIME") == "true" and self._is_socket_closed():
             self.client.close()
 
-        self.client.request(
-            method,
-            url,
-            headers=headers,
-            body=json.dumps(data),
-        )
+        if isinstance(data, dict):
+            self.client.request(
+                method,
+                url,
+                headers=headers,
+                body=json.dumps(data),
+            )
+        else:
+            self.client.request(
+                method,
+                url,
+                headers=headers,
+                body=data,
+            )
         res = self.client.getresponse()
         status = res.status
         payload = res.read()
 
-        if status in [200, 201, 207, 404]:
+        if status in [200, 202, 201, 207, 404]:
             return status, json.loads(payload) if status != 404 else None
         raise urllib.error.HTTPError(
             url, status, res.reason, res.headers, res.fp)
@@ -100,8 +122,30 @@ class Drive(_Service):
         super().__init__(project_key=project_key, project_id=project_id, host=host,
                          name=drive_name)
         assert drive_name, "Please provide a Drive name. E.g 'mydrive"
-
         host = host or os.getenv("DETA_DRIVE_HOST") or "drive.deta.sh"
+
+    def put(self, name:str, data:typing.Union[str, BufferedIOBase, bytes]=None, *, path:str=None, content_type:str=None) -> str:
+        chunk_size = 104857600  # TODO 100MB threshold needs tuning
+        if (path!=None) and (data!=None):
+            raise Exception("Please only provide data or a path. Not both.")
+        if path != None:
+            data = open(path, 'rb')
+        if not isinstance(data, BufferedIOBase):
+            _, res = self._request(f"/files?name={name}", "POST", data, content_type)
+            return res["name"]
+        chunk_number = 1
+        uuid = ""
+        for chunk in iter(partial(data.read, chunk_size), b''):
+            if (chunk_number == 1) and (self._measure_size(chunk) < chunk_size):
+                _, res = self._request(f"/files?name={name}", "POST", chunk)
+            else:
+                if (chunk_number == 1):
+                    _, res = self._request(f"/uploads?name={name}", "POST")
+                    uuid = res["upload_id"]
+                _ , res = asyncio.run(self._async_request(f"/uploads/{uuid}/parts?name={name}&part={chunk_number}", "POST", chunk))
+                chunk_number = chunk_number + 1
+                _, res = self._request(f"/uploads/{uuid}?name={name}", "PATCH")
+                return str(res["name"])
 
     def list(self, limit:int=1000, prefix:str=None, last:str=None) -> typing.Generator:
         code = 200
