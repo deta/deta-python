@@ -61,7 +61,7 @@ class _Service:
         self.base_path = "/v1/{0}/{1}".format(
             self.project_id, self.name)
         host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
-        self.client = http.client.HTTPSConnection(host, timeout=3)
+        self.client = http.client.HTTPSConnection(host, timeout=30)
     
     def _is_socket_closed(self):
         if not self.client.sock:
@@ -241,7 +241,7 @@ class Base(_Service):
         # encode key
         key = quote(key, safe="")
         _, res = self._request("/items/{}".format(key), "GET")
-        if isinstance(res, dict):
+        if isinstance(res, dict) or res == None:
             return res or None
         raise Exception("Result is not of type dict; got "+str(type(res))+" instead.")
 
@@ -338,7 +338,7 @@ class Base(_Service):
         counter = 0
         while code == 200 and last and pages > counter:
             code, res = self._fetch(query, buffer, last)
-            if isinstance(res, dict):
+            if isinstance(res, dict) or res == None:
                 items = res["items"]
                 last = res["paging"].get("last")
                 counter += 1
