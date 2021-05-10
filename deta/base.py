@@ -55,11 +55,11 @@ class _Service:
     def __init__(self, project_key: str, project_id: str, host: str = None, name: str=None):
         assert project_key, "Please provide a project_key. Check docs.deta.sh"
         assert name, "Please provide a name."
-        self.base_path = "/v1/{0}/{1}".format(
-            self.project_id, self.name)
         self.name = name
         self.project_key = project_key
         self.project_id = project_id
+        self.base_path = "/v1/{0}/{1}".format(
+            self.project_id, self.name)
         host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
         self.client = http.client.HTTPSConnection(host, timeout=3)
     
