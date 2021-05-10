@@ -124,6 +124,11 @@ class Drive(_Service):
         assert drive_name, "Please provide a Drive name. E.g 'mydrive"
         host = host or os.getenv("DETA_DRIVE_HOST") or "drive.deta.sh"
 
+    def deleteMany(self, names:typing.List[str]) -> typing.Optional[dict]:
+        assert names, "Names is empty"
+        _, res = self._request("/files", "DELETE", {"names": names})
+        return res
+
     def delete(self, name: str) -> typing.Optional[str]:
         """Delete an item from drive
         name: the name of item to be deleted
