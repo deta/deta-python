@@ -47,7 +47,7 @@ class Util:
     def prepend(self, value: typing.Union[dict, list, str, int, float, bool]):
         return self.Prepend(value)
 
-class _Object:
+class _Service:
     def __init__(self, project_key:str, project_id:str, host:str=None):
         assert project_key, "Please provide a project_key. Check docs.deta.sh"
         self.project_key = project_key
@@ -92,7 +92,7 @@ class _Object:
         raise urllib.error.HTTPError(
             url, status, res.reason, res.headers, res.fp)
 
-class Drive(_Object):
+class Drive(_Service):
     def __init__(self, drive_name:str=None, project_key:str=None, project_id:str=None, host:str=None):
         assert drive_name, "Please provide a Drive name. E.g 'mydrive"
         assert project_key, "Please provide a project_key. Check docs.deta.sh"
@@ -106,7 +106,7 @@ class Drive(_Object):
 
 
 
-class Base(_Object):
+class Base(_Service):
     def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
         assert name, "Please provide a Base name. E.g 'mydb'"
         assert project_key, "Please provide a project_key. Check docs.deta.sh"
