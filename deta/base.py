@@ -121,7 +121,7 @@ class Drive(_Object):
         self.project_key = project_key
         self.project_id = project_id
         host = host or os.getenv("DETA_DRIVE_HOST") or "drive.deta.sh"
-        self.client = http.client.HTTPConnection(host, timeout=300)
+        self.client = http.client.HTTPSConnection(host, timeout=300)
         self.base_path = "/v1/{0}/{1}".format(self.project_id, self.name)
 
     def put(self, name:str, data:typing.Union[str, BufferedIOBase, bytes]=None, *, path:str=None, content_type:str=None) -> str:
