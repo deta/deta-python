@@ -139,18 +139,14 @@ class Drive(_Object):
             uuid = ""
             for chunk in iter(partial(data.read, chunk_size), b''):
                 if (chunk_number == 1) and (self._measure_size(chunk) < chunk_size):
-                    print(chunk)
                     _, res = self._request(f"/files?name={name}", "POST", chunk)
                 else:
-                    print(chunk_number)
                     if (chunk_number == 1):
                         _, res = self._request(f"/uploads?name={name}", "POST")
-                        print(res)
                         uuid = res["upload_id"]
                     try:
                         _ , res = asyncio.run(self._async_request(f"/uploads/{uuid}/parts?name={name}&part={chunk_number}", "POST", chunk))
                     except Exception as e:
-                        print(f"[!] Chunk {chunk_number} of size {chunk_size} failed to upload. Added to retry queue.")
                         retry_queue.append(chunk_number)
                     chunk_number = chunk_number + 1
                     _, res = self._request(f"/uploads/{uuid}?name={name}", "PATCH")
