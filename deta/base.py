@@ -85,7 +85,7 @@ class _Service:
     async def _async_request(self, path: str, method: str, data: typing.Union[str, BufferedIOBase, bytes, dict] = None, headers: dict = None):
         return self._request(path=path, method=method, data=data, headers=headers)
 
-    def _request(self, path: str, method: str, data: typing.Union[str, BufferedIOBase, bytes, dict] = None, content_type:str=None, headers: dict = None):
+    def _request(self, path: str, method: str, data: typing.Union[str, BufferedIOBase, bytes, dict] = None, content_type:str=None, headers: dict = None, no_read:bool = False):
         url = self.base_path + path
         content_type = content_type or "application/json"
         headers = headers or {"X-API-Key": self.project_key,
@@ -110,11 +110,13 @@ class _Service:
             )
         res = self.client.getresponse()
         status = res.status
-        payload = res.read()
         
         if status in [200, 202, 201, 207, 404]:
             if status == 404:
-                return None
+                return status, None
+            if (no_read):
+                return status, res
+            payload = res.read()
             try:
                 payload = json.loads(payload)
             except:
@@ -132,19 +134,21 @@ class Drive(_Service):
 
     def get(self, name:str=None) -> typing.Optional[BufferedIOBase]:
         assert name, "Please provide the name of the file to get."
-        code,res = self._request(f"/files/download?name={name}", "GET")
-        if code == 404:
-            return None
-        file_stream = BytesIO()
-        file_stream.write(res)
-        file_stream.seek(0)
-        # Not closing the file here weirds me out, is this ok?
-        return file_stream
+        code,res = self._request(f"/files/download?name={name}", "GET", no_read=True)
+        stream = BytesIO()
+        if isinstance(res, bytes):
+            stream.write(res)
+            stream.seek(0)
+            return stream
+        raise Exception("Response was not of type bytes")
+        
 
     def deleteMany(self, names:typing.List[str]) -> typing.Optional[dict]:
         assert names, "Names is empty"
         _, res = self._request("/files", "DELETE", {"names": names})
-        return res
+        if isinstance(res, dict):
+            return res
+        raise Exception("Payload not a dict")
 
     def delete(self, name: str) -> typing.Optional[str]:
         """Delete an item from drive
@@ -153,13 +157,15 @@ class Drive(_Service):
         if name == "":
             raise ValueError("Name is empty")
         # encode key
-        key = quote(name, safe="")
+        name = quote(name, safe="")
         status, payload = self._request("/files", "DELETE", {"names":[name]})
         if (status == 404):
             return None
-        if len(payload["failed"]) > 0:
-            raise Exception(f"Deletion failed for: {payload['failed']}")
-        return payload["deleted"]
+        if (isinstance(payload, dict)):
+            if len(payload["failed"]) > 0:
+                raise Exception(f"Deletion failed for: {payload['failed']}")
+            return payload["deleted"]
+        raise Exception("Payload was not a dict")
 
     def put(self, name:str, data:typing.Union[str, BufferedIOBase, bytes]=None, *, path:str=None, content_type:str=None) -> str:
         chunk_size = 104857600  # TODO 100MB threshold needs tuning
@@ -169,7 +175,9 @@ class Drive(_Service):
             data = open(path, 'rb')
         if not isinstance(data, BufferedIOBase):
             _, res = self._request(f"/files?name={name}", "POST", data, content_type)
-            return res["name"]
+            if isinstance(res, dict):
+                return res["name"]
+            raise Exception("Payload not a dict")
         chunk_number = 1
         uuid = ""
         for chunk in iter(partial(data.read, chunk_size), b''):
@@ -178,36 +186,46 @@ class Drive(_Service):
             else:
                 if (chunk_number == 1):
                     _, res = self._request(f"/uploads?name={name}", "POST")
-                    uuid = res["upload_id"]
+                    if isinstance(res, dict):
+                        uuid = res["upload_id"]
+                        raise Exception("Payload not a dict")
+                    
                 _ , res = asyncio.run(self._async_request(f"/uploads/{uuid}/parts?name={name}&part={chunk_number}", "POST", chunk))
                 chunk_number = chunk_number + 1
                 _, res = self._request(f"/uploads/{uuid}?name={name}", "PATCH")
-                return str(res["name"])
+                if isinstance(res, dict):
+                    return str(res["name"])
+                raise Exception("Payload not a dict")
 
     def list(self, limit:int=1000, prefix:str=None, last:str=None) -> typing.Generator:
         code = 200
         counter = 0
         while code == 200 and counter<limit:
             code, res = self._fetch(limit, prefix, last)
-            limit = res["paging"]["limit"]
-            for item in res["names"]:
-                yield item
-                counter += 1
-                last = res["paging"].get("last")
+            if isinstance(res, dict):
+                limit = res["paging"]["limit"]
+                for item in res["names"]:
+                    yield item
+                    counter += 1
+                    last = res["paging"].get("last")
+            else:
+                raise Exception("Result is not of type dict")
     
     def _fetch(
         self,
         limit:int=1000,
         prefix:str=None,
         last: str = None,
-    ) -> typing.Optional[typing.Tuple[int, list]]:
+    ) -> typing.Optional[typing.Tuple[int, typing.List]]:
         url = f"/files?limit={limit}"
         if prefix != None:
             url = url+"&prefix={prefix}"
         if last != None:
             url = url+"&last={last}"
         code, res = self._request(url, "GET")
-        return code, res
+        if isinstance(res, list):
+            return code, res
+        raise Exception("Result is not of type list")
 
 class Base(_Service):
     def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
@@ -225,7 +243,9 @@ class Base(_Service):
         # encode key
         key = quote(key, safe="")
         _, res = self._request("/items/{}".format(key), "GET")
-        return res or None
+        if isinstance(res, dict):
+            return res or None
+        raise Exception("Result is not of type dict")
 
     def delete(self, key: str) -> typing.Optional[bool]:
         """Delete an item from the database
@@ -269,7 +289,9 @@ class Base(_Service):
             data["key"] = key
 
         code, res = self._request("/items", "PUT", {"items": [data]})
-        return res["processed"]["items"][0] if res and code == 207 else None
+        if isinstance(res, dict) or res == None:
+            return res["processed"]["items"][0] if res and code == 207 else None
+        raise Exception("Result not an instance of dict")
 
     def put_many(self, items: typing.List[typing.Union[dict, list, str, int, bool]]):
         assert len(items) <= 25, "We can't put more than 25 items at a time."
@@ -299,7 +321,9 @@ class Base(_Service):
             payload["query"] = query if isinstance(query, list) else [query]
 
         code, res = self._request("/query", "POST", payload)
-        return code, res
+        if isinstance(res, list):
+            return code, res
+        raise Exception("Result not of type list")
 
     def fetch(
         self,
@@ -318,10 +342,12 @@ class Base(_Service):
         counter = 0
         while code == 200 and last and pages > counter:
             code, res = self._fetch(query, buffer, last)
-            items = res["items"]
-            last = res["paging"].get("last")
-            counter += 1
-            yield items
+            if isinstance(res, dict):
+                items = res["items"]
+                last = res["paging"].get("last")
+                counter += 1
+                yield items
+            raise Exception("Response is not of type dict")
 
     def update(self, updates: dict, key: str):
         """
