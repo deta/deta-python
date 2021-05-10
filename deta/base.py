@@ -124,6 +124,21 @@ class Drive(_Service):
         assert drive_name, "Please provide a Drive name. E.g 'mydrive"
         host = host or os.getenv("DETA_DRIVE_HOST") or "drive.deta.sh"
 
+    def delete(self, name: str) -> typing.Optional[str]:
+        """Delete an item from drive
+        name: the name of item to be deleted
+        """
+        if name == "":
+            raise ValueError("Name is empty")
+        # encode key
+        key = quote(name, safe="")
+        status, payload = self._request("/files", "DELETE", {"names":[name]})
+        if (status == 404):
+            return None
+        if len(payload["failed"]) > 0:
+            raise Exception(f"Deletion failed for: {payload['failed']}")
+        return payload["deleted"]
+
     def put(self, name:str, data:typing.Union[str, BufferedIOBase, bytes]=None, *, path:str=None, content_type:str=None) -> str:
         chunk_size = 104857600  # TODO 100MB threshold needs tuning
         if (path!=None) and (data!=None):
