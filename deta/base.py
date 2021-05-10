@@ -133,29 +133,20 @@ class Drive(_Object):
         if not isinstance(data, BufferedIOBase):
             _, res = self._request(f"/files?name={name}", "POST", data, content_type)
             return res["name"]
-        retry_queue = []
-        def _partial_upload():
-            chunk_number = 1
-            uuid = ""
-            for chunk in iter(partial(data.read, chunk_size), b''):
-                if (chunk_number == 1) and (self._measure_size(chunk) < chunk_size):
-                    _, res = self._request(f"/files?name={name}", "POST", chunk)
-                else:
-                    if (chunk_number == 1):
-                        _, res = self._request(f"/uploads?name={name}", "POST")
-                        uuid = res["upload_id"]
-                    try:
-                        _ , res = asyncio.run(self._async_request(f"/uploads/{uuid}/parts?name={name}&part={chunk_number}", "POST", chunk))
-                    except Exception as e:
-                        retry_queue.append(chunk_number)
-                    chunk_number = chunk_number + 1
-                    _, res = self._request(f"/uploads/{uuid}?name={name}", "PATCH")
-                    return res["name"]
+        chunk_number = 1
+        uuid = ""
+        for chunk in iter(partial(data.read, chunk_size), b''):
+            if (chunk_number == 1) and (self._measure_size(chunk) < chunk_size):
+                _, res = self._request(f"/files?name={name}", "POST", chunk)
+            else:
+                if (chunk_number == 1):
+                    _, res = self._request(f"/uploads?name={name}", "POST")
+                    uuid = res["upload_id"]
+                _ , res = asyncio.run(self._async_request(f"/uploads/{uuid}/parts?name={name}&part={chunk_number}", "POST", chunk))
+                chunk_number = chunk_number + 1
+                _, res = self._request(f"/uploads/{uuid}?name={name}", "PATCH")
+                return str(res["name"])
 
-        with data:
-            _partial_upload()
-            while len(retry_queue) > 0:
-                _partial_upload()
                   
 
 class Base(_Object):
