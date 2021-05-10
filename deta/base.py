@@ -50,12 +50,6 @@ class Util:
 
     def prepend(self, value: typing.Union[dict, list, str, int, float, bool]):
         return self.Prepend(value)
-    
-    def measureSize(self, measurable) -> int:
-        if isinstance(measurable, BufferedIOBase):
-            return sys.getsizeof(measurable.read())
-        else:
-            return sys.getsizeof(measurable)
 
 class _Object:
     def __init__(self, project_key:str, project_id:str, host:str=None):
@@ -64,7 +58,6 @@ class _Object:
         host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
         self.base_path = "OVERRIDE ME" # TODO there must be a better way
         self.client = http.client.HTTPSConnection(host, timeout=3)
-        self.util = Util()
     
     def _is_socket_closed(self):
         if not self.client.sock:
@@ -78,6 +71,12 @@ class _Object:
         if len(tcp_info) > 0 and tcp_info[0] == 8:
             return True
         return False
+    
+    def _measure_size(self, measurable) -> int:
+        if isinstance(measurable, BufferedIOBase):
+            return sys.getsizeof(measurable.read())
+        else:
+            return sys.getsizeof(measurable)
 
     async def _async_request(self, path: str, method: str, data: typing.Union[str, BufferedIOBase, bytes, dict] = None, headers: dict = None):
         return self._request(path=path, method=method, data=data, headers=headers)
@@ -124,7 +123,6 @@ class Drive(_Object):
         host = host or os.getenv("DETA_DRIVE_HOST") or "drive.deta.sh"
         self.client = http.client.HTTPConnection(host, timeout=300)
         self.base_path = "/v1/{0}/{1}".format(self.project_id, self.name)
-        self.util = Util()
 
     def put(self, name:str, data:typing.Union[str, BufferedIOBase, bytes]=None, *, path:str=None, content_type:str=None) -> str:
         chunk_size = 104857600  # TODO 100MB threshold needs tuning
@@ -140,7 +138,7 @@ class Drive(_Object):
             chunk_number = 1
             uuid = ""
             for chunk in iter(partial(data.read, chunk_size), b''):
-                if (chunk_number == 1) and (self.util.measureSize(chunk) < chunk_size):
+                if (chunk_number == 1) and (self._measure_size(chunk) < chunk_size):
                     print(chunk)
                     _, res = self._request(f"/files?name={name}", "POST", chunk)
                 else:
