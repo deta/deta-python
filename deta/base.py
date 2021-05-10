@@ -115,6 +115,8 @@ class Drive(_Object):
         status, payload = self._request("/files", "DELETE", {"names":[name]})
         if (status == 404):
             return None
+        if len(payload["failed"]) > 0:
+            raise Exception(f"Deletion failed for: {payload['failed']}")
         return payload["deleted"]
 
 
