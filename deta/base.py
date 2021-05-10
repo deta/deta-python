@@ -102,7 +102,6 @@ class Drive(_Service):
         assert drive_name, "Please provide a Drive name. E.g 'mydrive"
 
         host = host or os.getenv("DETA_DRIVE_HOST") or "drive.deta.sh"
-        self.client = http.client.HTTPSConnection(host, timeout=3)
 
 
 
@@ -113,7 +112,6 @@ class Base(_Service):
 
 
         host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
-        self.client = http.client.HTTPSConnection(host, timeout=3)
         self.util = Util()
 
     def get(self, key: str) -> typing.Optional[dict]:
