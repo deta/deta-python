@@ -48,17 +48,16 @@ class Util:
         return self.Prepend(value)
 
 class _Service:
-    def __init__(self, project_key: str, project_id: str, host: str = None, name: str=None, base_path:str=None):
+    def __init__(self, project_key: str, project_id: str, host: str = None, name: str=None):
         assert project_key, "Please provide a project_key. Check docs.deta.sh"
         assert name, "Please provide a name."
-        assert base_path
-        self.base_path = base_path
+        self.base_path = "/v1/{0}/{1}".format(
+            self.project_id, self.name)
         self.name = name
         self.project_key = project_key
         self.project_id = project_id
         host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
         self.client = http.client.HTTPSConnection(host, timeout=3)
-        self.util = Util()
     
     def _is_socket_closed(self):
         if not self.client.sock:
@@ -99,7 +98,7 @@ class _Service:
 class Drive(_Service):
     def __init__(self, drive_name:str=None, project_key:str=None, project_id:str=None, host:str=None):
         super().__init__(project_key=project_key, project_id=project_id, host=host,
-                         name=drive_name, base_path="/v1/{0}/{1}".format(self.project_id, self.name))
+                         name=drive_name)
         assert drive_name, "Please provide a Drive name. E.g 'mydrive"
 
         host = host or os.getenv("DETA_DRIVE_HOST") or "drive.deta.sh"
@@ -110,7 +109,7 @@ class Drive(_Service):
 class Base(_Service):
     def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
         super().__init__(project_key=project_key, project_id=project_id, host=host,
-                         name=name, base_path="/v1/{0}/{1}".format(self.project_id, self.name))
+                         name=name)
 
 
         host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
