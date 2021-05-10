@@ -338,12 +338,10 @@ class Base(_Service):
         counter = 0
         while code == 200 and last and pages > counter:
             code, res = self._fetch(query, buffer, last)
-            if isinstance(res, dict) or res == None:
-                items = res["items"]
-                last = res["paging"].get("last")
-                counter += 1
-                yield items
-            raise Exception("Response is not of type dict; got "+str(type(res))+" instead.")
+            items = res["items"]
+            last = res["paging"].get("last")
+            counter += 1
+            yield items
 
     def update(self, updates: dict, key: str):
         """
