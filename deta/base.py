@@ -223,9 +223,7 @@ class Drive(_Service):
         if last != None:
             url = url+"&last={last}"
         code, res = self._request(url, "GET")
-        if isinstance(res, list):
-            return code, res
-        raise Exception("Result is not of type list; got "+str(type(res))+" instead.")
+        return code, res
 
 class Base(_Service):
     def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
@@ -321,7 +319,9 @@ class Base(_Service):
             payload["query"] = query if isinstance(query, list) else [query]
 
         code, res = self._request("/query", "POST", payload)
-        return code, res
+        if isinstance(res, list):
+            return code, res
+        raise Exception("Result not of type list; got "+str(type(res))+" instead.")
 
     def fetch(
         self,
