@@ -226,8 +226,9 @@ class Base(_Service):
         super().__init__(project_key=project_key, project_id=project_id, host=host,
                          name=name)
 
-
         host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
+        self.client = client = http.client.HTTPSConnection(
+            self.host, timeout=30)
         self.util = Util()
 
     def get(self, key: str) -> typing.Optional[dict]:
