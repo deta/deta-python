@@ -35,7 +35,7 @@ class TestDriveMethods(unittest.TestCase):
         self.assertIsNotNone(key)
         self.assertIsNotNone(name)
         deta = Deta(key)
-        self.drive = deta.Drive(str(key), "127.0.0.1:9015")
+        self.drive = deta.Drive(str(key))
         return super().setUp()
     
     def tearDown(self) -> None:
