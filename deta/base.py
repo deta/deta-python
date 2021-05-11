@@ -1,5 +1,5 @@
 import http.client
-from io import BufferedIOBase, BytesIO
+from io import BufferedIOBase, BytesIO, IOBase
 import os
 import socket
 import struct
@@ -60,21 +60,8 @@ class _Service:
         self.project_id = project_id
         self.base_path = "/v1/{0}/{1}".format(
             self.project_id, self.name)
-        host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
-        self.client = http.client.HTTPSConnection(host, timeout=30)
-    
-    def _is_socket_closed(self):
-        if not self.client.sock:
-            return True
-        fmt = "B" * 7 + "I" * 21
-        tcp_info = struct.unpack(
-            fmt, self.client.sock.getsockopt(
-                socket.IPPROTO_TCP, socket.TCP_INFO, 92)
-        )
-        # 8 = CLOSE_WAIT
-        if len(tcp_info) > 0 and tcp_info[0] == 8:
-            return True
-        return False
+        self.host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
+        self.client = None
     
     def _measure_size(self, measurable) -> int:
         if isinstance(measurable, BufferedIOBase):
@@ -90,28 +77,29 @@ class _Service:
         content_type = content_type or "application/json"
         headers = headers or {"X-API-Key": self.project_key,
                               "Content-Type": content_type}
-        # close connection if socket is closed
-        if os.environ.get("DETA_RUNTIME") == "true" and self._is_socket_closed():
-            self.client.close()
-
+        if self.client == None or not isinstance(self.client, http.client.HTTPSConnection):
+            client = http.client.HTTPSConnection(self.host, timeout=30)
+        else:
+            client = self.client
+        
         if isinstance(data, dict):
-            self.client.request(
+            client.request(
                 method,
                 url,
                 headers=headers,
                 body=json.dumps(data),
             )
         else:
-            self.client.request(
+            client.request(
                 method,
                 url,
                 headers=headers,
                 body=data,
             )
-        res = self.client.getresponse()
+        res = client.getresponse()
         status = res.status
         payload = res.read()
-        
+        client.close()
         if status in [200, 202, 201, 207, 404]:
             if status == 404:
                 return status, None
@@ -128,6 +116,7 @@ class _Service:
 
 class Drive(_Service):
     def __init__(self, drive_name:str=None, project_key:str=None, project_id:str=None, host:str=None):
+        host = host or "drive.deta.sh"
         super().__init__(project_key=project_key, project_id=project_id, host=host,
                          name=drive_name)
         assert drive_name, "Please provide a Drive name. E.g 'mydrive"
@@ -135,12 +124,10 @@ class Drive(_Service):
     def get(self, name:str=None) -> typing.Optional[BufferedIOBase]:
         assert name, "Please provide the name of the file to get."
         code,res = self._request(f"/files/download?name={name}", "GET", no_read=True)
-        stream = BytesIO()
-        if isinstance(res, bytes):
-            stream.write(res)
-            stream.seek(0)
-            return stream
-        raise Exception("Response was not of type bytes; got "+str(type(res))+" instead.")
+        file = BytesIO()
+        file.write(res.read())
+        file.seek(0)
+        return file
         
 
     def deleteMany(self, names:typing.List[str]) -> typing.Optional[dict]:
@@ -162,8 +149,10 @@ class Drive(_Service):
         if (status == 404):
             return None
         if (isinstance(payload, dict)):
-            if len(payload["failed"]) > 0:
-                raise Exception(f"Deletion failed for: {payload['failed']}")
+            if "failed" in payload.keys():
+                # Looks like drive ditches the "failed" key if it's empty
+                if len(payload["failed"]) > 0:
+                    raise Exception(f"Deletion failed for: {payload['failed']}")
             return payload["deleted"]
         raise Exception("Payload was not a dict; got "+str(type(payload))+" instead.")
 
@@ -183,13 +172,17 @@ class Drive(_Service):
         for chunk in iter(partial(data.read, chunk_size), b''):
             if (chunk_number == 1) and (self._measure_size(chunk) < chunk_size):
                 _, res = self._request(f"/files?name={name}", "POST", chunk)
+                data.close()
+                if isinstance(res, dict):
+                    return str(res["name"])
+                raise Exception("Result not a dict; got " +
+                                str(type(res))+" instead.")
             else:
                 if (chunk_number == 1):
                     _, res = self._request(f"/uploads?name={name}", "POST")
                     if isinstance(res, dict):
                         uuid = res["upload_id"]
                     raise Exception("Result not a dict; got "+str(type(res))+" instead.")
-                    
                 _ , res = asyncio.run(self._async_request(f"/uploads/{uuid}/parts?name={name}&part={chunk_number}", "POST", chunk))
                 chunk_number = chunk_number + 1
                 _, res = self._request(f"/uploads/{uuid}?name={name}", "PATCH")
@@ -203,11 +196,14 @@ class Drive(_Service):
         while code == 200 and counter<limit:
             code, res = self._fetch(limit, prefix, last)
             if isinstance(res, dict):
-                limit = res["paging"]["limit"]
-                for item in res["names"]:
-                    yield item
-                    counter += 1
-                    last = res["paging"].get("last")
+                if len(res["names"]) > 0:
+                    limit = res["paging"]["limit"]
+                    for item in res["names"]:
+                        yield item
+                        counter += 1
+                        last = res["paging"].get("last")
+                else:
+                    yield None
             else:
                 raise Exception("Result is not of type dict; got "+str(type(res))+" instead.")
     

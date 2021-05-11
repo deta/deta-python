@@ -1,4 +1,5 @@
 import os
+import io
 import unittest
 from deta import Deta, send_email
 from timeit import timeit
@@ -27,6 +28,57 @@ except:
             )
         )"""
 
+class TestDriveMethods(unittest.TestCase):
+    def setUp(self) -> None:
+        key = os.getenv("DETA_SDK_TEST_PROJECT_KEY")
+        name = os.getenv("DETA_SDK_TEST_DRIVE_NAME")
+        self.assertIsNotNone(key)
+        self.assertIsNotNone(name)
+        deta = Deta(key)
+        self.drive = deta.Drive(str(key), "127.0.0.1:9015")
+        return super().setUp()
+    
+    def tearDown(self) -> None:
+        all_items = next(self.drive.list())
+        for item in all_items:
+            self.drive.delete(item)
+        return super().tearDown()
+
+    def test(self):
+        def testPut() -> None:
+            self.assertEqual(self.drive.put("teststring", "hello, I'm a string"), "teststring")
+            f = open("LICENSE", 'rb')
+            self.assertEqual(self.drive.put("testfilefromhandle", f), "testfilefromhandle")
+            f.close()
+            self.assertEqual(self.drive.put(
+                "testfile", path="./Makefile"), "testfile")
+
+        def testGet() -> None:
+            self.assertEqual(self.drive.get("teststring").read(), "hello, I'm a string")
+
+        def testList() -> None:
+            items = self.drive.list()
+            count = 0
+            for item in items:
+                if count == 0:
+                    self.assertEqual(item, "teststring")
+                elif count == 1:
+                    self.assertEqual(item, "testfile")
+                elif count == 2:
+                    self.assertEqual(item, "testfilefromhandle")
+            self.assertEqual(count, 2)
+
+        def testDelete() -> None:
+            self.drive.delete("teststring")
+            self.assertEqual(self.drive.deleteMany(names=["testfile", "testfilefromhandle"]), {"deleted": ["testfile", "testfilefromhandle"]})
+
+        # Forcing these to not run async
+        testPut()
+        testGet()
+        testList()
+        testDelete()
+
+    
 
 class TestBaseMethods(unittest.TestCase):
     def setUp(self):
