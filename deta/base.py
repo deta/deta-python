@@ -1,7 +1,7 @@
 import os
 import typing
 from .service import _Service
-from urllib import quote
+from urllib.parse import quote
 
 try:
     import orjson as json
