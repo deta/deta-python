@@ -40,9 +40,10 @@ class _Service:
         stream: bool = False,
     ):
         url = self.base_path + path
+        content_type = content_type or JSON_MIME
         headers = headers or {}
         headers["X-Api-Key"] = self.project_key
-        headers["Content-Type"] = content_type or JSON_MIME
+        headers["Content-Type"] = content_type
 
         # close connection if socket is closed
         # fix for a bug in lambda
@@ -74,7 +75,7 @@ class _Service:
             return status, res
 
         ## return json if application/json
-        if res.getheader("content-type") == JSON_MIME:
+        if JSON_MIME in res.getheader("content-type"):
             return status, json.loads(res.read())
 
         return status, res.read()

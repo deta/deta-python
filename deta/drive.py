@@ -102,7 +102,8 @@ class Drive(_Service):
         self, name: str, upload_id: str, part: int, content_type: str = None
     ):
         self._request(
-            f"/uploads/{upload_id}?name={self._quote(name)}&part={part}",
+            f"/uploads/{upload_id}/parts?name={self._quote(name)}&part={part}",
+            "POST",
             content_type=content_type,
         )
 
