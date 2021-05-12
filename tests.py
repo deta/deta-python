@@ -1,6 +1,6 @@
 import os
 import unittest
-from deta import Deta 
+from deta import Deta
 
 try:
     from dotenv import load_dotenv
@@ -117,7 +117,9 @@ class TestBaseMethods(unittest.TestCase):
         self.assertEqual(self.db.get("existing4"), expectedItem)
 
         self.assertIsNone(
-            self.db.update({"value.name": self.db.util.trim(), "value.age": 32}, "existing4")
+            self.db.update(
+                {"value.name": self.db.util.trim(), "value.age": 32}, "existing4"
+            )
         )
         expectedItem = {"key": "existing4", "value": {"age": 32}}
         self.assertEqual(self.db.get("existing4"), expectedItem)

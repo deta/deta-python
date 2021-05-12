@@ -16,6 +16,7 @@ except Exception:
 
 __version__ = 0.8
 
+
 class Deta:
     def __init__(self, project_key: str = None, *, project_id: str = None):
         self.project_key = project_key or os.getenv("DETA_PROJECT_KEY")
@@ -28,8 +29,13 @@ class Deta:
     def Base(self, name: str, host: str = None):
         return Base(name, self.project_key, self.project_id, host)
 
-    def Drive(self, drive_name:str, host:str=None):
-        return Drive(drive_name=drive_name, project_key=self.project_key, project_id=self.project_id, host=host)
+    def Drive(self, drive_name: str, host: str = None):
+        return Drive(
+            drive_name=drive_name,
+            project_key=self.project_key,
+            project_id=self.project_id,
+            host=host,
+        )
 
     def send_email(self, to, subject, message, charset="UTF-8"):
         return send_email(to, subject, message, charset)

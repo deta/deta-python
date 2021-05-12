@@ -5,6 +5,7 @@ from urllib.parse import quote
 
 from .service import _Service
 
+
 class Util:
     class Trim:
         pass
@@ -39,27 +40,27 @@ class Util:
     def prepend(self, value: typing.Union[dict, list, str, int, float, bool]):
         return self.Prepend(value)
 
+
 class Base(_Service):
     def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
         assert name, "No Base name provided"
 
         host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
-        super().__init__(project_key=project_key, project_id=project_id, host=host,
-                         name=name)
+        super().__init__(
+            project_key=project_key, project_id=project_id, host=host, name=name
+        )
         self.util = Util()
 
-    def get(self, key: str) -> typing.Optional[dict]:
+    def get(self, key: str):
         if key == "":
             raise ValueError("Key is empty")
 
         # encode key
         key = quote(key, safe="")
         _, res = self._request("/items/{}".format(key), "GET")
-        if isinstance(res, dict) or res == None:
-            return res or None
-        raise Exception("Result is not of type dict; got "+str(type(res))+" instead.")
+        return res or None
 
-    def delete(self, key: str) -> typing.Optional[bool]:
+    def delete(self, key: str):
         """Delete an item from the database
         key: the key of item to be deleted
         """
@@ -68,7 +69,7 @@ class Base(_Service):
 
         # encode key
         key = quote(key, safe="")
-        _, _ = self._request("/items/{}".format(key), "DELETE")
+        self._request("/items/{}".format(key), "DELETE")
         return None
 
     def insert(self, data: typing.Union[dict, list, str, int, bool], key: str = None):
@@ -101,9 +102,7 @@ class Base(_Service):
             data["key"] = key
 
         code, res = self._request("/items", "PUT", {"items": [data]})
-        if isinstance(res, dict) or res == None:
-            return res["processed"]["items"][0] if res and code == 207 else None
-        raise Exception("Result not an instance of dict; got "+str(type(res))+" instead.")
+        return res["processed"]["items"][0] if res and code == 207 else None
 
     def put_many(self, items: typing.List[typing.Union[dict, list, str, int, bool]]):
         assert len(items) <= 25, "We can't put more than 25 items at a time."
