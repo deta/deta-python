@@ -3,7 +3,7 @@ import urllib.error
 import urllib.request
 
 from .base import Base
-from .base import Drive
+from .drive import Drive
 
 try:
     from detalib.app import App
@@ -15,7 +15,7 @@ except Exception:
 __version__ = 0.8
 
 class Deta:
-    def __init__(self, project_key: str = None, *, project_id: str = None, host: str = None):
+    def __init__(self, project_key: str = None, *, project_id: str = None):
         self.project_key = project_key or os.getenv("DETA_PROJECT_KEY")
         assert self.project_key, "No project key defined"
 
