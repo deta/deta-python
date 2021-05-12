@@ -47,7 +47,11 @@ class Base(_Service):
 
         host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
         super().__init__(
-            project_key=project_key, project_id=project_id, host=host, name=name
+            project_key=project_key, 
+            project_id=project_id, 
+            host=host, 
+            name=name,
+            timeout=3,
         )
         self.util = Util()
 

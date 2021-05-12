@@ -28,7 +28,11 @@ class Drive(_Service):
     ):
         assert name, "No Drive name provided"
         super().__init__(
-            project_key=project_key, project_id=project_id, host=host, name=name
+            project_key=project_key,
+            project_id=project_id,
+            host=host,
+            name=name,
+            timeout=300
         )
 
     def _quote(self, param: str):
