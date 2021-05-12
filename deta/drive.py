@@ -1,3 +1,4 @@
+import os
 import typing
 from io import BufferedIOBase, TextIOBase, RawIOBase, StringIO, BytesIO
 from urllib.parse import quote_plus
@@ -27,6 +28,8 @@ class Drive(_Service):
         host: str = None,
     ):
         assert name, "No Drive name provided"
+        host = host or os.getenv("DETA_DRIVE_HOST") or "drive.deta.sh"
+
         super().__init__(
             project_key=project_key,
             project_id=project_id,
