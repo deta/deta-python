@@ -1,12 +1,9 @@
 import os
+import json
 import typing
-from .service import _Service
 from urllib.parse import quote
 
-try:
-    import orjson as json
-except ImportError:
-    import json
+from .service import _Service
 
 class Util:
     class Trim:

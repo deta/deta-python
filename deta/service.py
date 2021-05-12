@@ -1,14 +1,10 @@
 import http.client
 import os
+import json
 import socket
 import struct
 import typing
 import urllib.error
-
-try:
-    import orjson as json
-except ImportError:
-    import json
 
 JSON_MIME = 'application/json'
 

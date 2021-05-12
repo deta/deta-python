@@ -1,6 +1,7 @@
 import typing
 from io import BufferedIOBase, TextIOBase, RawIOBase, StringIO, BytesIO
 from urllib.parse import quote_plus
+
 from .service import _Service
 
 UPLOAD_CHUNK_SIZE = 10485760
