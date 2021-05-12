@@ -6,22 +6,19 @@ from .base import Base
 from .base import Drive
 
 try:
-    import orjson as json
-except ImportError:
-    import json
-
-try:
     from detalib.app import App
 
     app = App()
 except Exception:
     pass
 
-__version__ = 0.7
+__version__ = 0.8
 
 class Deta:
     def __init__(self, project_key: str = None, *, project_id: str = None, host: str = None):
         self.project_key = project_key or os.getenv("DETA_PROJECT_KEY")
+        assert self.project_key, "No project key defined"
+
         self.project_id = project_id
         if not self.project_id:
             self.project_id = self.project_key.split("_")[0]

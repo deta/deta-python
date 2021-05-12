@@ -1,7 +1,6 @@
 import os
 import unittest
-from deta import Deta, send_email
-from timeit import timeit
+from deta import Deta 
 
 try:
     from dotenv import load_dotenv
