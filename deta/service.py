@@ -64,6 +64,7 @@ class _Service:
         status = res.status
 
         if status not in [200, 201, 202, 207, 404]:
+            _ = res.read()
             raise urllib.error.HTTPError(url, status, res.reason, res.headers, res.fp)
 
         ## return None if not found
