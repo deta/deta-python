@@ -17,7 +17,9 @@ class DriveStreamingBody:
 
     def iter_chunks(self, chunk_size: int = 1024):
         yield self.stream.read(chunk_size)
-
+    
+    def close(self):
+        return self.stream.close()
 
 class Drive(_Service):
     def __init__(
