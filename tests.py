@@ -32,10 +32,11 @@ class TestDriveMethods(unittest.TestCase):
     def setUp(self) -> None:
         key = os.getenv("DETA_SDK_TEST_PROJECT_KEY")
         name = os.getenv("DETA_SDK_TEST_DRIVE_NAME")
+        host = os.getenv("DETA_SDK_TEST_DRIVE_HOST")
         self.assertIsNotNone(key)
         self.assertIsNotNone(name)
         deta = Deta(key)
-        self.drive = deta.Drive(name, host="drive-staging.deta.sh")
+        self.drive = deta.Drive(name, host=host)
         return super().setUp()
     
     def tearDown(self) -> None:
