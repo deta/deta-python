@@ -55,7 +55,8 @@ class Drive(_Service):
         _, res = self._request(
             f"/files/download?name={self._quote(name)}", "GET", stream=True
         )
-        return DriveStreamingBody(res)
+        if res: return DriveStreamingBody(res)
+        return None
 
     def delete_many(self, names: typing.List[str]):
         """Delete many files from drive in single request.

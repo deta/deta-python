@@ -31,6 +31,8 @@ jobs:
         env:
           DETA_SDK_TEST_PROJECT_KEY: ${{secrets.DETA_SDK_TEST_PROJECT_KEY}}
           DETA_SDK_TEST_BASE_NAME: ${{secrets.DETA_SDK_TEST_BASE_NAME}}
+          DETA_SDK_TEST_DRIVE_NAME: ${{secrets.DETA_SDK_TEST_DRIVE_NAME}}
+          DETA_SDK_TEST_DRIVE_HOST: ${{secrets.DETA_SDK_TEST_DRIVE_HOST}}
         run: |
           python3 tests.py
 
