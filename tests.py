@@ -28,6 +28,7 @@ except:
             )
         )"""
 
+
 class TestDriveMethods(unittest.TestCase):
     def setUp(self) -> None:
         key = os.getenv("DETA_SDK_TEST_PROJECT_KEY")
@@ -38,7 +39,7 @@ class TestDriveMethods(unittest.TestCase):
         deta = Deta(key)
         self.drive = deta.Drive(name, host=host)
         return super().setUp()
-    
+
     def tearDown(self) -> None:
         all_items = self.drive.list()
         for item in all_items["names"]:
@@ -47,34 +48,22 @@ class TestDriveMethods(unittest.TestCase):
 
     def test_put_string(self):
         test_cases = [
+            {"name": "test_file_1.txt", "content": "this is a string."},
+            {"name": "name with spaces.txt", "content": "lorem ipsum"},
             {
                 "name": "test_file_1.txt",
-                "content": "this is a string."
+                "content": "same file name should be overwritten",
             },
-            {
-                "name": "name with spaces.txt",
-                "content": "lorem ipsum"
-            },
-            {
-                "name": "test_file_1.txt",
-                "content": "same file name should be overwritten"
-            }
         ]
         for tc in test_cases:
             name = self.drive.put(tc["name"], tc["content"])
             self.assertEqual(name, tc["name"])
             self.assertEqual(self.drive.get(tc["name"]).read().decode(), tc["content"])
-    
+
     def test_put_bytes(self):
         test_cases = [
-            {
-                "name": "byte_file.txt",
-                "content": b'bytes content'
-            },
-            {
-                "name": "another bytes file.txt",
-                "content": b'another bytes content'
-            }
+            {"name": "byte_file.txt", "content": b"bytes content"},
+            {"name": "another bytes file.txt", "content": b"another bytes content"},
         ]
         for tc in test_cases:
             name = self.drive.put(tc["name"], tc["content"])
@@ -85,57 +74,45 @@ class TestDriveMethods(unittest.TestCase):
         test_cases = [
             {
                 "name": "string_stream.txt",
-                "raw": b'string stream',
-                "content": io.StringIO("string stream")
+                "raw": b"string stream",
+                "content": io.StringIO("string stream"),
             },
             {
                 "name": "binary_stream.txt",
-                "raw": b'binary stream',
-                "content": io.BytesIO(b'binary stream')
-            }
+                "raw": b"binary stream",
+                "content": io.BytesIO(b"binary stream"),
+            },
         ]
         for tc in test_cases:
             name = self.drive.put(tc["name"], tc["content"])
             self.assertEqual(name, tc["name"])
             self.assertEqual(self.drive.get(tc["name"]).read(), tc["raw"])
             self.assertEqual(tc["content"].closed, True)
-    
+
     def test_large_file(self):
         name = "large_binary_file"
-        large_binary_file = os.urandom(UPLOAD_CHUNK_SIZE*2+1000)
+        large_binary_file = os.urandom(UPLOAD_CHUNK_SIZE * 2 + 1000)
         self.assertEqual(self.drive.put("large_binary_file", large_binary_file), name)
 
         body = self.drive.get(name)
         binary_stream = io.BytesIO(large_binary_file)
         for chunk in body.iter_chunks(UPLOAD_CHUNK_SIZE):
             self.assertEqual(chunk, binary_stream.read(UPLOAD_CHUNK_SIZE))
-        
+
     def test_delete(self):
         test_cases = [
-            {
-                "name": "to_del_1.txt",
-                "content": "hello"
-            },
-            {
-                "name": "to del name with spaces.txt",
-                "content": "hola"
-            }
+            {"name": "to_del_1.txt", "content": "hello"},
+            {"name": "to del name with spaces.txt", "content": "hola"},
         ]
         for tc in test_cases:
             self.drive.put(tc["name"], tc["content"])
             self.assertEqual(self.drive.delete(tc["name"]), tc["name"])
             self.assertIsNone(self.drive.get(tc["name"]))
-        
+
     def test_delete_many(self):
         test_cases = [
-            {
-                "name": "to_del_1.txt",
-                "content": "hello"
-            },
-            {
-                "name": "to del name with spaces.txt",
-                "content": "hola"
-            }
+            {"name": "to_del_1.txt", "content": "hello"},
+            {"name": "to del name with spaces.txt", "content": "hola"},
         ]
         for tc in test_cases:
             self.drive.put(tc["name"], tc["content"])
@@ -144,34 +121,25 @@ class TestDriveMethods(unittest.TestCase):
         deleted = self.drive.delete_many(names)["deleted"]
         self.assertIn(names[0], deleted)
         self.assertIn(names[1], deleted)
-        
+
         for n in names:
             self.assertIsNone(self.drive.get(n))
-        
+
     def test_list(self):
         test_cases = [
-            {
-                "name": "a",
-                "content": "a"
-            },
-            {
-                "name": "b",
-                "content": "b"
-            },
-            {
-                "name": "c/d",
-                "content": "c and d"
-            }
+            {"name": "a", "content": "a"},
+            {"name": "b", "content": "b"},
+            {"name": "c/d", "content": "c and d"},
         ]
         for tc in test_cases:
             self.drive.put(tc["name"], tc["content"])
 
-        self.assertEqual(self.drive.list()["names"],["a",  "b", "c/d"])
+        self.assertEqual(self.drive.list()["names"], ["a", "b", "c/d"])
         self.assertEqual(self.drive.list(limit=1)["names"], ["a"])
         self.assertEqual(self.drive.list(limit=2)["paging"]["last"], "b")
         self.assertEqual(self.drive.list(prefix="c/")["names"], ["c/d"])
 
-    
+
 class TestBaseMethods(unittest.TestCase):
     def setUp(self):
         key = os.getenv("DETA_SDK_TEST_PROJECT_KEY")
