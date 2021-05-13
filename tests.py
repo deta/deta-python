@@ -144,8 +144,6 @@ class TestBaseMethods(unittest.TestCase):
     def setUp(self):
         key = os.getenv("DETA_SDK_TEST_PROJECT_KEY")
         name = os.getenv("DETA_SDK_TEST_BASE_NAME")
-        key = "a0lgu280_kiaqKg4wtcUvRNGENrPDcHfNDWxQc523"
-        name = "python_sdk_test"
         self.assertIsNotNone(key)
         self.assertIsNotNone(name)
         deta = Deta(key)
