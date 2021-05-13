@@ -3,23 +3,26 @@ import typing
 from io import BufferedIOBase, TextIOBase, RawIOBase, StringIO, BytesIO
 from urllib.parse import quote_plus
 
-from .service import _Service
+from .service import JSON_MIME, _Service
 
 UPLOAD_CHUNK_SIZE = 10485760
 
 
 class DriveStreamingBody:
     def __init__(self, res: BufferedIOBase):
-        self.stream = res
+        self.__stream = res
 
     def read(self, size: int = None):
-        return self.stream.read(size)
+        return self.__stream.read(size)
 
     def iter_chunks(self, chunk_size: int = 1024):
-        yield self.stream.read(chunk_size)
+        while True:
+            chunk = self.__stream.read(chunk_size)
+            if not chunk: break
+            yield chunk
     
     def close(self):
-        return self.stream.close()
+        return self.__stream.close()
 
 class Drive(_Service):
     def __init__(
@@ -54,22 +57,22 @@ class Drive(_Service):
         )
         return DriveStreamingBody(res)
 
-    def delete_many(self, names: typing.List[str]) -> typing.Optional[dict]:
+    def delete_many(self, names: typing.List[str]):
         """Delete many files from drive in single request.
         `names` are the names of the files to be deleted.
         Returns a dict with 'deleted' and 'failed' files.
         """
         assert names, "Names is empty"
-        _, res = self._request("/files", "DELETE", {"names": names})
+        _, res = self._request("/files", "DELETE", {"names": names}, content_type=JSON_MIME)
         return res
 
-    def delete(self, name: str) -> typing.Optional[str]:
+    def delete(self, name: str):
         """Delete a file from drive.
         `name` is the name of the file.
         Returns the name of the file deleted.
         """
         assert name, "Name not provided or empty"
-        _, payload = self.delete_many([name])
+        payload = self.delete_many([name])
         failed = payload.get("failed")
         if failed:
             raise Exception(f"Failed to delete '{name}':{failed[name]}")
@@ -101,11 +104,12 @@ class Drive(_Service):
         self._request(f"/uploads/{upload_id}?name={self._quote(name)}", "DELETE")
 
     def _upload_part(
-        self, name: str, upload_id: str, part: int, content_type: str = None
+        self, name: str, chunk:bytes, upload_id: str, part: int, content_type: str = None
     ):
         self._request(
             f"/uploads/{upload_id}/parts?name={self._quote(name)}&part={part}",
             "POST",
+            data=chunk,
             content_type=content_type,
         )
 
@@ -116,8 +120,7 @@ class Drive(_Service):
             return StringIO(data)
         elif isinstance(data, bytes):
             return BytesIO(data)
-        else:
-            return data
+        return data
 
     def put(
         self,
@@ -150,9 +153,11 @@ class Drive(_Service):
             if not chunk:
                 self._finish_upload(name, upload_id)
                 content_stream.close()
-                break
+                return name
+
+            # upload part
             try:
-                self._upload_part(name, upload_id, part, content_type)
+                self._upload_part(name, chunk, upload_id, part, content_type)
                 part += 1
             # clean up on exception
             # and raise exception again
@@ -160,7 +165,3 @@ class Drive(_Service):
                 self._abort_upload(name, upload_id)
                 content_stream.close()
                 raise e
-
-        # finish upload
-        self._finish_upload(name, upload_id)
-        return name

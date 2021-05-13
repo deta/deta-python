@@ -40,10 +40,9 @@ class _Service:
         stream: bool = False,
     ):
         url = self.base_path + path
-        content_type = content_type or JSON_MIME
         headers = headers or {}
         headers["X-Api-Key"] = self.project_key
-        headers["Content-Type"] = content_type
+        if content_type: headers["Content-Type"] = content_type
 
         # close connection if socket is closed
         # fix for a bug in lambda
@@ -63,13 +62,12 @@ class _Service:
         res = self.client.getresponse()
         status = res.status
 
-        if status not in [200, 201, 202, 207, 404]:
-            _ = res.read()
+        if status not in [200, 201, 202, 207]:
+            # need to read the response so subsequent requests can be sent on the client
+            res.read()
+            ## return None if not found
+            if status == 404: return status, None
             raise urllib.error.HTTPError(url, status, res.reason, res.headers, res.fp)
-
-        ## return None if not found
-        if status == 404:
-            return status, None
 
         ## if stream return the response without reading
         if stream:

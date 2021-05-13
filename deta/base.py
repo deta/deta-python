@@ -3,7 +3,7 @@ import json
 import typing
 from urllib.parse import quote
 
-from .service import _Service
+from .service import _Service, JSON_MIME
 
 
 class Util:
@@ -85,7 +85,7 @@ class Base(_Service):
         if key:
             data["key"] = key
 
-        code, res = self._request("/items", "POST", {"item": data})
+        code, res = self._request("/items", "POST", {"item": data}, content_type=JSON_MIME)
         if code == 201:
             return res
         elif code == 409:
@@ -105,7 +105,7 @@ class Base(_Service):
         if key:
             data["key"] = key
 
-        code, res = self._request("/items", "PUT", {"items": [data]})
+        code, res = self._request("/items", "PUT", {"items": [data]}, content_type=JSON_MIME)
         return res["processed"]["items"][0] if res and code == 207 else None
 
     def put_many(self, items: typing.List[typing.Union[dict, list, str, int, bool]]):
@@ -117,7 +117,7 @@ class Base(_Service):
             else:
                 _items.append(i)
 
-        _, res = self._request("/items", "PUT", {"items": _items})
+        _, res = self._request("/items", "PUT", {"items": _items}, content_type=JSON_MIME)
         return res
 
     def _fetch(
@@ -135,7 +135,7 @@ class Base(_Service):
         if query:
             payload["query"] = query if isinstance(query, list) else [query]
 
-        code, res = self._request("/query", "POST", payload)
+        code, res = self._request("/query", "POST", payload, content_type=JSON_MIME)
         return code, res
 
     def fetch(
@@ -190,7 +190,7 @@ class Base(_Service):
                 payload["set"][attr] = value
 
         encoded_key = quote(key, safe="")
-        code, _ = self._request("/items/{}".format(encoded_key), "PATCH", payload)
+        code, _ = self._request("/items/{}".format(encoded_key), "PATCH", payload, content_type=JSON_MIME)
         if code == 200:
             return None
         elif code == 404:
