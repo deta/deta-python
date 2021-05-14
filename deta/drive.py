@@ -64,6 +64,7 @@ class Drive(_Service):
         Returns a dict with 'deleted' and 'failed' files.
         """
         assert names, "Names is empty"
+        assert len(names) <= 1000, "More than 1000 names to delete"
         _, res = self._request("/files", "DELETE", {"names": names}, content_type=JSON_MIME)
         return res
 
