@@ -61,7 +61,7 @@ class _Service:
             body=body,
         )
         # response
-        res = self.client.getresponse()
+        res = client.getresponse()
         status = res.status
 
         if status not in [200, 201, 202, 207]:
