@@ -45,6 +45,7 @@ class _Service:
         headers = headers or {}
         headers["X-Api-Key"] = self.project_key
         if content_type: headers["Content-Type"] = content_type
+        if not self.keep_alive: headers["Connection"] = "close" 
 
         # close connection if socket is closed
         # fix for a bug in lambda
@@ -53,7 +54,7 @@ class _Service:
 
         # send request
         body = json.dumps(data) if content_type == JSON_MIME else data
-        client = self.client or http.client.HTTPSConnection(self.host, self.timeout)
+        client = self.client or http.client.HTTPSConnection(host=self.host, timeout=self.timeout)
         client.request(
             method,
             url,
@@ -73,7 +74,7 @@ class _Service:
                 return status, None
             raise urllib.error.HTTPError(url, status, res.reason, res.headers, res.fp)
 
-        ## if stream return the response without reading and closing the client
+        ## if stream return the response and client without reading and closing the client
         if stream:
             return status, res
 

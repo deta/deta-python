@@ -3,6 +3,7 @@ import typing
 import http
 from io import BufferedIOBase, TextIOBase, RawIOBase, StringIO, BytesIO
 from urllib.parse import quote_plus
+import http.client
 
 from .service import JSON_MIME, _Service
 
@@ -11,9 +12,12 @@ UPLOAD_CHUNK_SIZE = 1024 * 1024 * 10
 
 
 class DriveStreamingBody:
-    def __init__(self, res: BufferedIOBase, close_callback):
+    def __init__(self, res:BufferedIOBase):
         self.__stream = res
-        self.__close_callback = close_callback
+
+    @property
+    def closed(self):
+        return self.__stream.closed
 
     def read(self, size: int = None):
         return self.__stream.read(size)
@@ -25,9 +29,11 @@ class DriveStreamingBody:
             yield chunk
     
     def close(self):
-        # close stream and call close call back function
-        self.__stream.close()
-        self.__close_callback()
+        # close stream
+        try:
+            self.__stream.close()
+        except:
+            pass
 
 class Drive(_Service):
     def __init__(
@@ -52,9 +58,6 @@ class Drive(_Service):
     def _quote(self, param: str):
         return quote_plus(param)
 
-    def _close_underlying_connection(self):
-        return self.client.close()
-
     def get(self, name: str):
         """Get/Download a file from drive.
         `name` is the name of the file.
@@ -64,7 +67,7 @@ class Drive(_Service):
         _, res = self._request(
             f"/files/download?name={self._quote(name)}", "GET", stream=True
         )
-        if res: return DriveStreamingBody(res, self._close_underlying_connection)
+        if res: return DriveStreamingBody(res) 
         return None
 
     def delete_many(self, names: typing.List[str]):

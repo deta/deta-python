@@ -44,7 +44,6 @@ class TestDriveMethods(unittest.TestCase):
         all_items = self.drive.list()
         for item in all_items["names"]:
             self.drive.delete(item)
-        self.drive.client.close()
 
     def test_put_string(self):
         test_cases = [
@@ -138,7 +137,20 @@ class TestDriveMethods(unittest.TestCase):
         self.assertEqual(self.drive.list(limit=1)["names"], ["a"])
         self.assertEqual(self.drive.list(limit=2)["paging"]["last"], "b")
         self.assertEqual(self.drive.list(prefix="c/")["names"], ["c/d"])
-
+    
+    def test_read_close(self):
+        test_cases = [
+            {
+                "name": "string_stream.txt",
+                "raw": b"string stream",
+                "content": io.StringIO("string stream"),
+            },
+        ]
+        for tc in test_cases:
+            self.drive.put(tc["name"], tc["content"])     
+            body = self.drive.get(tc["name"])
+            body.close()
+            self.assertEqual(body.closed, True)
 
 class TestBaseMethods(unittest.TestCase):
     def setUp(self):
