@@ -47,9 +47,9 @@ class _Base(_Service):
 
         host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
         super().__init__(
-            project_key=project_key, 
-            project_id=project_id, 
-            host=host, 
+            project_key=project_key,
+            project_id=project_id,
+            host=host,
             name=name,
             timeout=3,
         )
@@ -85,7 +85,9 @@ class _Base(_Service):
         if key:
             data["key"] = key
 
-        code, res = self._request("/items", "POST", {"item": data}, content_type=JSON_MIME)
+        code, res = self._request(
+            "/items", "POST", {"item": data}, content_type=JSON_MIME
+        )
         if code == 201:
             return res
         elif code == 409:
@@ -105,7 +107,9 @@ class _Base(_Service):
         if key:
             data["key"] = key
 
-        code, res = self._request("/items", "PUT", {"items": [data]}, content_type=JSON_MIME)
+        code, res = self._request(
+            "/items", "PUT", {"items": [data]}, content_type=JSON_MIME
+        )
         return res["processed"]["items"][0] if res and code == 207 else None
 
     def put_many(self, items: typing.List[typing.Union[dict, list, str, int, bool]]):
@@ -117,7 +121,9 @@ class _Base(_Service):
             else:
                 _items.append(i)
 
-        _, res = self._request("/items", "PUT", {"items": _items}, content_type=JSON_MIME)
+        _, res = self._request(
+            "/items", "PUT", {"items": _items}, content_type=JSON_MIME
+        )
         return res
 
     def _fetch(
@@ -190,7 +196,9 @@ class _Base(_Service):
                 payload["set"][attr] = value
 
         encoded_key = quote(key, safe="")
-        code, _ = self._request("/items/{}".format(encoded_key), "PATCH", payload, content_type=JSON_MIME)
+        code, _ = self._request(
+            "/items/{}".format(encoded_key), "PATCH", payload, content_type=JSON_MIME
+        )
         if code == 200:
             return None
         elif code == 404:

@@ -16,23 +16,27 @@ except Exception:
 
 __version__ = 0.8
 
-def _get_project_key_id(project_key: str= None, project_id: str = None):
+
+def _get_project_key_id(project_key: str = None, project_id: str = None):
     project_key = project_key or os.getenv("DETA_PROJECT_KEY")
     assert project_key, "No project key defined"
 
     project_id = project_id
     if not project_id:
-       project_id = project_key.split("_")[0]
+        project_id = project_key.split("_")[0]
     assert project_id != project_key, "Bad project key provided"
     return project_key, project_id
 
-def Base(name:str):
+
+def Base(name: str):
     project_key, project_id = _get_project_key_id()
     return _Base(name, project_key, project_id)
 
-def Drive(name:str):
+
+def Drive(name: str):
     project_key, project_id = _get_project_key_id()
     return _Drive(name, project_key, project_id)
+
 
 class Deta:
     def __init__(self, project_key: str = None, *, project_id: str = None):

@@ -12,7 +12,7 @@ UPLOAD_CHUNK_SIZE = 1024 * 1024 * 10
 
 
 class DriveStreamingBody:
-    def __init__(self, res:BufferedIOBase):
+    def __init__(self, res: BufferedIOBase):
         self.__stream = res
 
     @property
@@ -25,15 +25,17 @@ class DriveStreamingBody:
     def iter_chunks(self, chunk_size: int = 1024):
         while True:
             chunk = self.__stream.read(chunk_size)
-            if not chunk: break
+            if not chunk:
+                break
             yield chunk
-    
+
     def close(self):
         # close stream
         try:
             self.__stream.close()
         except:
             pass
+
 
 class _Drive(_Service):
     def __init__(
@@ -67,7 +69,8 @@ class _Drive(_Service):
         _, res = self._request(
             f"/files/download?name={self._quote(name)}", "GET", stream=True
         )
-        if res: return DriveStreamingBody(res) 
+        if res:
+            return DriveStreamingBody(res)
         return None
 
     def delete_many(self, names: typing.List[str]):
@@ -77,7 +80,9 @@ class _Drive(_Service):
         """
         assert names, "Names is empty"
         assert len(names) <= 1000, "More than 1000 names to delete"
-        _, res = self._request("/files", "DELETE", {"names": names}, content_type=JSON_MIME)
+        _, res = self._request(
+            "/files", "DELETE", {"names": names}, content_type=JSON_MIME
+        )
         return res
 
     def delete(self, name: str):
@@ -118,7 +123,12 @@ class _Drive(_Service):
         self._request(f"/uploads/{upload_id}?name={self._quote(name)}", "DELETE")
 
     def _upload_part(
-        self, name: str, chunk:bytes, upload_id: str, part: int, content_type: str = None
+        self,
+        name: str,
+        chunk: bytes,
+        upload_id: str,
+        part: int,
+        content_type: str = None,
     ):
         self._request(
             f"/uploads/{upload_id}/parts?name={self._quote(name)}&part={part}",

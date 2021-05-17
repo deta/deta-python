@@ -11,14 +11,22 @@ JSON_MIME = "application/json"
 
 class _Service:
     def __init__(
-        self, project_key: str, project_id: str, host: str, name: str, timeout: int, keep_alive: bool= True,
+        self,
+        project_key: str,
+        project_id: str,
+        host: str,
+        name: str,
+        timeout: int,
+        keep_alive: bool = True,
     ):
         self.project_key = project_key
         self.base_path = "/v1/{0}/{1}".format(project_id, name)
         self.host = host
         self.timeout = timeout
         self.keep_alive = keep_alive
-        self.client = http.client.HTTPSConnection(host, timeout=timeout) if keep_alive else None
+        self.client = (
+            http.client.HTTPSConnection(host, timeout=timeout) if keep_alive else None
+        )
 
     def _is_socket_closed(self):
         if not self.client.sock:
@@ -44,8 +52,10 @@ class _Service:
         url = self.base_path + path
         headers = headers or {}
         headers["X-Api-Key"] = self.project_key
-        if content_type: headers["Content-Type"] = content_type
-        if not self.keep_alive: headers["Connection"] = "close" 
+        if content_type:
+            headers["Content-Type"] = content_type
+        if not self.keep_alive:
+            headers["Connection"] = "close"
 
         # close connection if socket is closed
         # fix for a bug in lambda
@@ -54,7 +64,9 @@ class _Service:
 
         # send request
         body = json.dumps(data) if content_type == JSON_MIME else data
-        client = self.client or http.client.HTTPSConnection(host=self.host, timeout=self.timeout)
+        client = self.client or http.client.HTTPSConnection(
+            host=self.host, timeout=self.timeout
+        )
         client.request(
             method,
             url,
@@ -68,9 +80,10 @@ class _Service:
         if status not in [200, 201, 202, 207]:
             # need to read the response so subsequent requests can be sent on the client
             res.read()
-            if not self.keep_alive: client.close()
+            if not self.keep_alive:
+                client.close()
             ## return None if not found
-            if status == 404: 
+            if status == 404:
                 return status, None
             raise urllib.error.HTTPError(url, status, res.reason, res.headers, res.fp)
 
@@ -79,7 +92,12 @@ class _Service:
             return status, res
 
         ## return json if application/json
-        payload = json.loads(res.read()) if JSON_MIME in res.getheader("content-type") else res.read()
+        payload = (
+            json.loads(res.read())
+            if JSON_MIME in res.getheader("content-type")
+            else res.read()
+        )
 
-        if not self.keep_alive: client.close()
+        if not self.keep_alive:
+            client.close()
         return status, payload
