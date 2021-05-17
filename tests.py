@@ -151,7 +151,29 @@ class TestDriveMethods(unittest.TestCase):
             body = self.drive.get(tc["name"])
             body.close()
             self.assertEqual(body.closed, True)
+        
+    def test_read_lines(self):
+        test_cases = [
+            {
+                "name": "read_lines_test.txt",
+                "content": "first line\nSecond line\nLast Line\n",
+            },
+            {
+                "name": "read_lines_test_2.txt",
+                "content": "has no new lines, just a normal string",
+            },
+            {
+                "name": "read_lines_test_3.txt",
+                "content": "different new line\ranother line\r"
+            }
 
+        ]
+        for tc in test_cases:
+            test_stream = io.StringIO(tc["content"])
+            self.drive.put(tc["name"], tc["content"])
+            body = self.drive.get(tc["name"])
+            for line in body.iter_lines():
+                self.assertEqual(test_stream.readline(), line.decode()) 
 
 class TestBaseMethods(unittest.TestCase):
     def setUp(self):
