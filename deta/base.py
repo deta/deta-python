@@ -41,7 +41,7 @@ class Util:
         return self.Prepend(value)
 
 
-class Base(_Service):
+class _Base(_Service):
     def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
         assert name, "No Base name provided"
 

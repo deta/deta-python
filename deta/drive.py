@@ -35,7 +35,7 @@ class DriveStreamingBody:
         except:
             pass
 
-class Drive(_Service):
+class _Drive(_Service):
     def __init__(
         self,
         name: str = None,
