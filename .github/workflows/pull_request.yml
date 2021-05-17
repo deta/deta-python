@@ -1,4 +1,4 @@
-name: Lint on pull request
+name: Test on Pull Request
 on:
   workflow_dispatch:
   pull_request:
@@ -6,7 +6,7 @@ on:
       - master
 
 jobs:
-  full_ci:
+  test:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
@@ -20,12 +20,6 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      # Run install script
-      - name: Install dependencies
-        run: "scripts/install"
-      # Lint the code
-      - name: Lint code with black
-        run: make format
       # Test the code
       - name: Test code
         env:
@@ -35,5 +29,3 @@ jobs:
           DETA_SDK_TEST_DRIVE_HOST: ${{secrets.DETA_SDK_TEST_DRIVE_HOST}}
         run: |
           python3 tests.py
-
-      
