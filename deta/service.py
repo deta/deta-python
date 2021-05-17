@@ -60,7 +60,10 @@ class _Service:
         # close connection if socket is closed
         # fix for a bug in lambda
         if os.environ.get("DETA_RUNTIME") == "true" and self._is_socket_closed():
-            self.client.close()
+            try:
+                self.client.close()
+            except:
+                pass
 
         # send request
         body = json.dumps(data) if content_type == JSON_MIME else data
