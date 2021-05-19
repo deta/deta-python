@@ -2,8 +2,8 @@ from setuptools import setup
 
 setup(
     name="deta",
-    version="0.7",
-    description="Deta lib for Python 3",
+    version="0.8",
+    description="Python SDK for Deta Base & Deta Drive.",
     url="http://github.com/deta/deta-python",
     author="Deta",
     author_email="hello@deta.sh",
