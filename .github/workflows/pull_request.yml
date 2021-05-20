@@ -1,25 +1,31 @@
-name: Lint on pull request
+name: Test on Pull Request
 on:
+  workflow_dispatch:
   pull_request:
     branches:
       - master
 
 jobs:
-  full_ci:
+  test:
     runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        python-version: ["3.7"]
     steps:
       # Get the code into the container
       - name: Checkout
         uses: actions/checkout@v2
-      # Lint the code
-      - name: Python linters Black Check
-        uses: jose-lpa/python-black-check-action@1.0.0
+      # Setup Python
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
       # Test the code
       - name: Test code
         env:
           DETA_SDK_TEST_PROJECT_KEY: ${{secrets.DETA_SDK_TEST_PROJECT_KEY}}
           DETA_SDK_TEST_BASE_NAME: ${{secrets.DETA_SDK_TEST_BASE_NAME}}
+          DETA_SDK_TEST_DRIVE_NAME: ${{secrets.DETA_SDK_TEST_DRIVE_NAME}}
+          DETA_SDK_TEST_DRIVE_HOST: ${{secrets.DETA_SDK_TEST_DRIVE_HOST}}
         run: |
           python3 tests.py
-
-      

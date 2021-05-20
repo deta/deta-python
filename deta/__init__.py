@@ -2,12 +2,11 @@ import os
 import typing
 import urllib.error
 import urllib.request
-from .base import Base
+import json
 
-try:
-    import orjson as json
-except ImportError:
-    import json
+from deta.base import _Base
+from deta.drive import _Drive
+
 
 try:
     from detalib.app import App
@@ -16,6 +15,29 @@ try:
 except Exception:
     pass
 
+__version__ = 0.8
+
+
+def _get_project_key_id(project_key: str = None, project_id: str = None):
+    project_key = project_key or os.getenv("DETA_PROJECT_KEY")
+    assert project_key, "No project key defined"
+
+    project_id = project_id
+    if not project_id:
+        project_id = project_key.split("_")[0]
+    assert project_id != project_key, "Bad project key provided"
+    return project_key, project_id
+
+
+def Base(name: str):
+    project_key, project_id = _get_project_key_id()
+    return _Base(name, project_key, project_id)
+
+
+def Drive(name: str):
+    project_key, project_id = _get_project_key_id()
+    return _Drive(name, project_key, project_id)
+
 
 class Deta:
     def __init__(
@@ -23,15 +45,21 @@ class Deta:
         project_key: typing.Optional[str] = None,
         *,
         project_id: typing.Optional[str] = None,
-        host: typing.Optional[str] = None,
     ):
-        self.project_key = project_key or os.getenv("DETA_PROJECT_KEY")
+        project_key, project_id = _get_project_key_id(project_key, project_id)
+        self.project_key = project_key
         self.project_id = project_id
-        if not self.project_id:
-            self.project_id = self.project_key.split("_")[0]
 
     def Base(self, name: str, host: typing.Optional[str] = None):
-        return Base(name, self.project_key, self.project_id, host)
+        return _Base(name, self.project_key, self.project_id, host)
+
+    def Drive(self, name: str, host: str = None):
+        return _Drive(
+            name=name,
+            project_key=self.project_key,
+            project_id=self.project_id,
+            host=host,
+        )
 
     def send_email(self, to, subject, message, charset="UTF-8"):
         return send_email(to, subject, message, charset)
