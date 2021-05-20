@@ -10,10 +10,8 @@ requirements = ["python-dotenv"]
 
 setuptools.setup(
     name="deta",
-    version="0.4",
-    description="Deta lib for Python 3",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
+    version="0.8",
+    description="Python SDK for Deta Base & Deta Drive.",
     url="http://github.com/deta/deta-python",
     author="Deta",
     author_email="hello@deta.sh",

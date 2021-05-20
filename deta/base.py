@@ -1,15 +1,9 @@
-import http.client
 import os
-import socket
-import struct
+import json
 import typing
-import urllib.error
 from urllib.parse import quote
 
-try:
-    import orjson as json
-except ImportError:
-    import json
+from .service import _Service, JSON_MIME
 
 
 class Util:
@@ -47,53 +41,21 @@ class Util:
         return self.Prepend(value)
 
 
-class Base:
+class _Base(_Service):
     def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
-        assert name, "Please provide a Base name. E.g 'mydb'"
-        assert project_key, "Please provide a project_key. Check docs.deta.sh"
-        self.name = name
-        self.project_id = project_id
-        self.project_key = project_key
+        assert name, "No Base name provided"
 
         host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
-        self.client = http.client.HTTPSConnection(host, timeout=3)
-        self.base_path = "/v1/{0}/{1}".format(self.project_id, self.name)
+        super().__init__(
+            project_key=project_key,
+            project_id=project_id,
+            host=host,
+            name=name,
+            timeout=3,
+        )
         self.util = Util()
 
-    def _is_socket_closed(self):
-        if not self.client.sock:
-            return True
-        fmt = "B" * 7 + "I" * 21
-        tcp_info = struct.unpack(
-            fmt, self.client.sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_INFO, 92)
-        )
-        # 8 = CLOSE_WAIT
-        if len(tcp_info) > 0 and tcp_info[0] == 8:
-            return True
-        return False
-
-    def _request(self, path: str, method: str, data: dict = None):
-        url = self.base_path + path
-
-        # close connection if socket is closed
-        if os.environ.get("DETA_RUNTIME") == "true" and self._is_socket_closed():
-            self.client.close()
-
-        self.client.request(
-            method,
-            url,
-            headers={"X-API-Key": self.project_key, "Content-Type": "application/json"},
-            body=json.dumps(data),
-        )
-        res = self.client.getresponse()
-        status = res.status
-        payload = res.read()
-
-        if status in [200, 201, 207, 404]:
-            return status, json.loads(payload) if status != 404 else None
-        raise urllib.error.HTTPError(url, status, res.reason, res.headers, res.fp)
-
-    def get(self, key: str) -> dict:
+    def get(self, key: str):
         if key == "":
             raise ValueError("Key is empty")
 
@@ -102,7 +64,7 @@ class Base:
         _, res = self._request("/items/{}".format(key), "GET")
         return res or None
 
-    def delete(self, key: str) -> bool:
+    def delete(self, key: str):
         """Delete an item from the database
         key: the key of item to be deleted
         """
@@ -111,7 +73,7 @@ class Base:
 
         # encode key
         key = quote(key, safe="")
-        _, _ = self._request("/items/{}".format(key), "DELETE")
+        self._request("/items/{}".format(key), "DELETE")
         return None
 
     def insert(self, data: typing.Union[dict, list, str, int, bool], key: str = None):
@@ -123,7 +85,9 @@ class Base:
         if key:
             data["key"] = key
 
-        code, res = self._request("/items", "POST", {"item": data})
+        code, res = self._request(
+            "/items", "POST", {"item": data}, content_type=JSON_MIME
+        )
         if code == 201:
             return res
         elif code == 409:
@@ -143,7 +107,9 @@ class Base:
         if key:
             data["key"] = key
 
-        code, res = self._request("/items", "PUT", {"items": [data]})
+        code, res = self._request(
+            "/items", "PUT", {"items": [data]}, content_type=JSON_MIME
+        )
         return res["processed"]["items"][0] if res and code == 207 else None
 
     def put_many(self, items: typing.List[typing.Union[dict, list, str, int, bool]]):
@@ -155,7 +121,9 @@ class Base:
             else:
                 _items.append(i)
 
-        _, res = self._request("/items", "PUT", {"items": _items})
+        _, res = self._request(
+            "/items", "PUT", {"items": _items}, content_type=JSON_MIME
+        )
         return res
 
     def _fetch(
@@ -163,7 +131,7 @@ class Base:
         query: typing.Union[dict, list] = None,
         buffer: int = None,
         last: str = None,
-    ) -> typing.Tuple[int, list]:
+    ) -> typing.Optional[typing.Tuple[int, list]]:
         """This is where actual fetch happens."""
         payload = {
             "limit": buffer,
@@ -173,7 +141,7 @@ class Base:
         if query:
             payload["query"] = query if isinstance(query, list) else [query]
 
-        code, res = self._request("/query", "POST", payload)
+        code, res = self._request("/query", "POST", payload, content_type=JSON_MIME)
         return code, res
 
     def fetch(
@@ -228,7 +196,9 @@ class Base:
                 payload["set"][attr] = value
 
         encoded_key = quote(key, safe="")
-        code, _ = self._request("/items/{}".format(encoded_key), "PATCH", payload)
+        code, _ = self._request(
+            "/items/{}".format(encoded_key), "PATCH", payload, content_type=JSON_MIME
+        )
         if code == 200:
             return None
         elif code == 404:
