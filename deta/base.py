@@ -64,6 +64,16 @@ class _Base(_Service):
         _, res = self._request("/items/{}".format(key), "GET")
         return res or None
 
+    def exists(self, key: str):
+        """Determines if an object with this key exists in the database
+        key: the key of item
+        """
+
+        if key == "":
+            return False
+        
+        return self.get(key) != None
+
     def delete(self, key: str):
         """Delete an item from the database
         key: the key of item to be deleted
