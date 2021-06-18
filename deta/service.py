@@ -60,31 +60,46 @@ class _Service:
         # close connection if socket is closed
         # fix for a bug in lambda
         try:
-            if self.client and os.environ.get("DETA_RUNTIME") == "true" and self._is_socket_closed():
+            if (
+                self.client
+                and os.environ.get("DETA_RUNTIME") == "true"
+                and self._is_socket_closed()
+            ):
                 self.client.close()
         except:
             pass
 
         # send request
         body = json.dumps(data) if content_type == JSON_MIME else data
-        client = self.client or http.client.HTTPSConnection(
+        self.client = self.client or http.client.HTTPSConnection(
             host=self.host, timeout=self.timeout
         )
-        client.request(
-            method,
-            url,
-            headers=headers,
-            body=body,
-        )
+
         # response
-        res = client.getresponse()
+        retry = 2  # try at least twice to regain a new connection
+        while retry > 0:
+            try:
+                self.client.request(
+                    method,
+                    url,
+                    headers=headers,
+                    body=body,
+                )
+                res = self.client.getresponse()
+                retry = 0
+            except http.client.RemoteDisconnected:
+                self.client = http.client.HTTPSConnection(
+                    host=self.host, timeout=self.timeout
+                )
+                retry -= 1
+
         status = res.status
 
         if status not in [200, 201, 202, 207]:
             # need to read the response so subsequent requests can be sent on the client
             res.read()
             if not self.keep_alive:
-                client.close()
+                self.client.close()
             ## return None if not found
             if status == 404:
                 return status, None
@@ -102,5 +117,5 @@ class _Service:
         )
 
         if not self.keep_alive:
-            client.close()
+            self.client.close()
         return status, payload
