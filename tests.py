@@ -280,6 +280,25 @@ class TestBaseMethods(unittest.TestCase):
         }
         self.assertEqual(res2, expectedItem)
 
+        res3 = self.db.collect([{"value?gt": 6}, {"value?lt": 50}], limit=2)
+        expectedItem = {
+            "paging": {"size": 2, "last": "existing2"},
+            "items": [
+                {"key": "%@#//#!#)#$_", "list": ["a"], "value": 0},
+                {"key": "existing2", "value": 7},
+            ],
+        }
+        self.assertEqual(res3, expectedItem)
+
+        res4 = self.db.collect(
+            [{"value?gt": 6}, {"value?lt": 50}], limit=2, last="existing2"
+        )
+        expectedItem = {
+            "paging": {"size": 1},
+            "items": [{"key": "existing3", "value": 44}],
+        }
+        self.assertEqual(res4, expectedItem)
+
     def test_update(self):
         self.assertIsNone(self.db.update({"value.name": "spongebob"}, "existing4"))
         expectedItem = {"key": "existing4", "value": {"name": "spongebob"}}
