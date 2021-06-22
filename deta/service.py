@@ -71,9 +71,11 @@ class _Service:
 
         # send request
         body = json.dumps(data) if content_type == JSON_MIME else data
-        self.client = self.client or http.client.HTTPSConnection(
-            host=self.host, timeout=self.timeout
-        )
+
+        if not self.keep_alive:
+            self.client = http.client.HTTPSConnection(
+                host=self.host, timeout=self.timeout
+            )
 
         # response
         retry = 2  # try at least twice to regain a new connection
