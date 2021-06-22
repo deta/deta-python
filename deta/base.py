@@ -166,6 +166,20 @@ class _Base(_Service):
             counter += 1
             yield items
 
+    def collect(
+        self,
+        query: typing.Union[dict, list] = None,
+        *,
+        limit: int = 1000,
+        last: str = None,
+    ):
+        """
+        collect items from the database.
+            `query` is an optional filter or list of filters. Without filter, it will return the whole db.
+        """
+        code, res = self._fetch(query, limit, last)
+        return res if res and code == 200 else None
+
     def update(self, updates: dict, key: str):
         """
         update an item in the database
