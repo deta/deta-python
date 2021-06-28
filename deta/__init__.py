@@ -14,7 +14,7 @@ try:
 except Exception:
     pass
 
-__version__ = 0.8
+__version__ = 0.9
 
 
 def _get_project_key_id(project_key: str = None, project_id: str = None):
