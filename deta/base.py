@@ -7,7 +7,7 @@ from .service import _Service, JSON_MIME
 
 
 class FetchResponse:
-    def __init__(self, count, last, items):
+    def __init__(self, count=0, last=None, items=[]):
         self.count = count
         self.last = last
         self.items = items
