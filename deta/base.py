@@ -8,9 +8,21 @@ from .service import _Service, JSON_MIME
 
 class FetchResponse:
     def __init__(self, count=0, last=None, items=[]):
-        self.count = count
-        self.last = last
-        self.items = items
+        self._count = count
+        self._last = last
+        self._items = items
+
+    @property
+    def count(self):
+        return self._count
+
+    @property
+    def last(self):
+        return self._last
+
+    @property
+    def items(self):
+        return self._items
 
     def __eq__(self, other):
         return (
