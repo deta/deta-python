@@ -72,29 +72,8 @@ class _Service:
         # send request
         body = json.dumps(data) if content_type == JSON_MIME else data
 
-        if not self.keep_alive:
-            self.client = http.client.HTTPSConnection(
-                host=self.host, timeout=self.timeout
-            )
-
         # response
-        retry = 2  # try at least twice to regain a new connection
-        while retry > 0:
-            try:
-                self.client.request(
-                    method,
-                    url,
-                    headers=headers,
-                    body=body,
-                )
-                res = self.client.getresponse()
-                retry = 0
-            except http.client.RemoteDisconnected:
-                self.client = http.client.HTTPSConnection(
-                    host=self.host, timeout=self.timeout
-                )
-                retry -= 1
-
+        res = self._send_request_with_retry(method, url, headers, body)
         status = res.status
 
         if status not in [200, 201, 202, 207]:
@@ -121,3 +100,31 @@ class _Service:
         if not self.keep_alive:
             self.client.close()
         return status, payload
+
+    def _send_request_with_retry(
+        self,
+        method: str,
+        url: str,
+        headers: dict = None,
+        body: typing.Union[str, bytes, dict] = None,
+        retry=2,  # try at least twice to regain a new connection
+    ):
+        reinitializeConnection = False
+        while retry > 0:
+            try:
+                if not self.keep_alive or reinitializeConnection:
+                    self.client = http.client.HTTPSConnection(
+                        host=self.host, timeout=self.timeout
+                    )
+
+                self.client.request(
+                    method,
+                    url,
+                    headers=headers,
+                    body=body,
+                )
+                res = self.client.getresponse()
+                return res
+            except http.client.RemoteDisconnected:
+                reinitializeConnection = True
+                retry -= 1
