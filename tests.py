@@ -1,4 +1,5 @@
 from deta.drive import UPLOAD_CHUNK_SIZE
+from deta.base import FetchResponse
 import os
 import io
 import unittest
@@ -151,7 +152,7 @@ class TestDriveMethods(unittest.TestCase):
             body = self.drive.get(tc["name"])
             body.close()
             self.assertEqual(body.closed, True)
-        
+
     def test_read_lines(self):
         test_cases = [
             {
@@ -164,16 +165,16 @@ class TestDriveMethods(unittest.TestCase):
             },
             {
                 "name": "read_lines_test_3.txt",
-                "content": "different new line\ranother line\r"
-            }
-
+                "content": "different new line\ranother line\r",
+            },
         ]
         for tc in test_cases:
             test_stream = io.StringIO(tc["content"])
             self.drive.put(tc["name"], tc["content"])
             body = self.drive.get(tc["name"])
             for line in body.iter_lines():
-                self.assertEqual(test_stream.readline(), line.decode()) 
+                self.assertEqual(test_stream.readline(), line.decode())
+
 
 class TestBaseMethods(unittest.TestCase):
     def setUp(self):
@@ -191,9 +192,9 @@ class TestBaseMethods(unittest.TestCase):
         self.db.put_many([self.item1, self.item2, self.item3, self.item4, self.item5])
 
     def tearDown(self):
-        for items in self.db.fetch():
-            for i in items:
-                self.db.delete(i["key"])
+        items = self.db.fetch().items
+        for i in items:
+            self.db.delete(i["key"])
         self.db.client.close()
 
     def test_put(self):
@@ -244,20 +245,71 @@ class TestBaseMethods(unittest.TestCase):
         self.assertIsNone(self.db.delete("key_does_not_exist"))
 
     def test_fetch(self):
-        res1 = next(self.db.fetch({"value": "test"}))
-        res2 = next(self.db.fetch({"valuexyz": "test_none_existing_value"}))
-        res3 = next(self.db.fetch(buffer=3))
-        res4 = list(self.db.fetch(buffer=1, pages=4))
-        res5 = next(self.db.fetch({"value.name": self.item4["value"]["name"]}))
-        res6 = next(self.db.fetch({"value?gte": 7}))
-        res7 = next(self.db.fetch([{"value?gt": 6}, {"value?lt": 50}]))
-        self.assertTrue(len(res1) > 0)
-        self.assertTrue(len(res2) == 0)
-        self.assertTrue(len(res3) == 3)
-        self.assertTrue(len(res4) == 4)
-        self.assertTrue(len(res5) > 0)
-        self.assertTrue(len(res6) == 2)
-        self.assertTrue(len(res7) == 3)
+        res1 = self.db.fetch({"value?gte": 7})
+        expectedItem = FetchResponse(
+            2,
+            None,
+            [
+                {"key": "existing2", "value": 7},
+                {"key": "existing3", "value": 44},
+            ],
+        )
+        self.assertEqual(res1, expectedItem)
+
+        res2 = self.db.fetch({"value?gte": 7}, limit=1)
+        expectedItem = FetchResponse(
+            1,
+            "existing2",
+            [
+                {"key": "existing2", "value": 7},
+            ],
+        )
+        self.assertEqual(res2, expectedItem)
+
+        res3 = self.db.fetch([{"value?gt": 6}, {"value?lt": 50}], limit=2)
+        expectedItem = FetchResponse(
+            2,
+            "existing2",
+            [
+                {"key": "%@#//#!#)#$_", "list": ["a"], "value": 0},
+                {"key": "existing2", "value": 7},
+            ],
+        )
+        self.assertEqual(res3, expectedItem)
+
+        res4 = self.db.fetch(
+            [{"value?gt": 6}, {"value?lt": 50}], limit=2, last="existing2"
+        )
+        expectedItem = FetchResponse(
+            1,
+            None,
+            [{"key": "existing3", "value": 44}],
+        )
+        self.assertEqual(res4, expectedItem)
+
+        res5 = self.db.fetch({"value": "test"})
+        expectedItem = FetchResponse(
+            1,
+            None,
+            [{"key": "existing1", "value": "test"}],
+        )
+        self.assertEqual(res5, expectedItem)
+
+        res6 = self.db.fetch({"valuexyz": "test_none_existing_value"})
+        expectedItem = FetchResponse(
+            0,
+            None,
+            [],
+        )
+        self.assertEqual(res6, expectedItem)
+
+        res7 = self.db.fetch({"value.name": self.item4["value"]["name"]})
+        expectedItem = FetchResponse(
+            1,
+            None,
+            [{"key": "existing4", "value": {"name": "patrick"}}],
+        )
+        self.assertEqual(res7, expectedItem)
 
     def test_update(self):
         self.assertIsNone(self.db.update({"value.name": "spongebob"}, "existing4"))

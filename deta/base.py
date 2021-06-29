@@ -6,6 +6,32 @@ from urllib.parse import quote
 from .service import _Service, JSON_MIME
 
 
+class FetchResponse:
+    def __init__(self, count=0, last=None, items=[]):
+        self._count = count
+        self._last = last
+        self._items = items
+
+    @property
+    def count(self):
+        return self._count
+
+    @property
+    def last(self):
+        return self._last
+
+    @property
+    def items(self):
+        return self._items
+
+    def __eq__(self, other):
+        return (
+            self.count == other.count
+            and self.last == other.last
+            and self.items == other.items
+        )
+
+
 class Util:
     class Trim:
         pass
@@ -148,23 +174,18 @@ class _Base(_Service):
         self,
         query: typing.Union[dict, list] = None,
         *,
-        buffer: int = None,
-        pages: int = 10,
-    ) -> typing.Generator:
+        limit: int = 1000,
+        last: str = None,
+    ):
         """
         fetch items from the database.
             `query` is an optional filter or list of filters. Without filter, it will return the whole db.
-        Returns a generator with all the result, We will paginate the request based on `buffer`.
         """
-        last = True
-        code = 200
-        counter = 0
-        while code == 200 and last and pages > counter:
-            code, res = self._fetch(query, buffer, last)
-            items = res["items"]
-            last = res["paging"].get("last")
-            counter += 1
-            yield items
+        _, res = self._fetch(query, limit, last)
+
+        paging = res.get("paging")
+
+        return FetchResponse(paging.get("size"), paging.get("last"), res.get("items"))
 
     def update(self, updates: dict, key: str):
         """
