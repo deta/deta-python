@@ -181,9 +181,7 @@ class _Base(_Service):
         fetch items from the database.
             `query` is an optional filter or list of filters. Without filter, it will return the whole db.
         """
-        code, res = self._fetch(query, limit, last)
-        if code != 200:
-            return None
+        _, res = self._fetch(query, limit, last)
 
         paging = res.get("paging")
 
