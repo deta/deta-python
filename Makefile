@@ -8,10 +8,10 @@ test_email: # Test Send Email
 	python -m unittest tests.TestSendEmail
 
 build: # Build distribution for SDK
-	python setup.py sdist bdist_wheel
+	python3 setup.py sdist bdist_wheel
 
 publish: # Publish the package to PyPI
-	python -m twine upload dist/*
+	python3 -m twine upload dist/*
 
 clean: # Remove distribution packages
 	rm -rf dist build deta.egg.egg-info
