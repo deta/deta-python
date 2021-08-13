@@ -25,11 +25,7 @@ class FetchResponse:
         return self._items
 
     def __eq__(self, other):
-        return (
-            self.count == other.count
-            and self.last == other.last
-            and self.items == other.items
-        )
+        return self.count == other.count and self.last == other.last and self.items == other.items
 
 
 class Util:
@@ -111,9 +107,7 @@ class _Base(_Service):
         if key:
             data["key"] = key
 
-        code, res = self._request(
-            "/items", "POST", {"item": data}, content_type=JSON_MIME
-        )
+        code, res = self._request("/items", "POST", {"item": data}, content_type=JSON_MIME)
         if code == 201:
             return res
         elif code == 409:
@@ -133,9 +127,7 @@ class _Base(_Service):
         if key:
             data["key"] = key
 
-        code, res = self._request(
-            "/items", "PUT", {"items": [data]}, content_type=JSON_MIME
-        )
+        code, res = self._request("/items", "PUT", {"items": [data]}, content_type=JSON_MIME)
         return res["processed"]["items"][0] if res and code == 207 else None
 
     def put_many(self, items: typing.List[typing.Union[dict, list, str, int, bool]]):
@@ -147,9 +139,7 @@ class _Base(_Service):
             else:
                 _items.append(i)
 
-        _, res = self._request(
-            "/items", "PUT", {"items": _items}, content_type=JSON_MIME
-        )
+        _, res = self._request("/items", "PUT", {"items": _items}, content_type=JSON_MIME)
         return res
 
     def _fetch(

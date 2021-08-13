@@ -277,9 +277,7 @@ class TestBaseMethods(unittest.TestCase):
         )
         self.assertEqual(res3, expectedItem)
 
-        res4 = self.db.fetch(
-            [{"value?gt": 6}, {"value?lt": 50}], limit=2, last="existing2"
-        )
+        res4 = self.db.fetch([{"value?gt": 6}, {"value?lt": 50}], limit=2, last="existing2")
         expectedItem = FetchResponse(
             1,
             None,
@@ -317,9 +315,7 @@ class TestBaseMethods(unittest.TestCase):
         self.assertEqual(self.db.get("existing4"), expectedItem)
 
         self.assertIsNone(
-            self.db.update(
-                {"value.name": self.db.util.trim(), "value.age": 32}, "existing4"
-            )
+            self.db.update({"value.name": self.db.util.trim(), "value.age": 32}, "existing4")
         )
         expectedItem = {"key": "existing4", "value": {"age": 32}}
         self.assertEqual(self.db.get("existing4"), expectedItem)

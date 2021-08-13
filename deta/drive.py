@@ -73,9 +73,7 @@ class _Drive(_Service):
         Returns a DriveStreamingBody.
         """
         assert name, "No name provided"
-        _, res = self._request(
-            f"/files/download?name={self._quote(name)}", "GET", stream=True
-        )
+        _, res = self._request(f"/files/download?name={self._quote(name)}", "GET", stream=True)
         if res:
             return DriveStreamingBody(res)
         return None
@@ -87,9 +85,7 @@ class _Drive(_Service):
         """
         assert names, "Names is empty"
         assert len(names) <= 1000, "More than 1000 names to delete"
-        _, res = self._request(
-            "/files", "DELETE", {"names": names}, content_type=JSON_MIME
-        )
+        _, res = self._request("/files", "DELETE", {"names": names}, content_type=JSON_MIME)
         return res
 
     def delete(self, name: str):
