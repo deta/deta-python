@@ -1,9 +1,7 @@
 import os
 import typing
-import http
 from io import BufferedIOBase, TextIOBase, RawIOBase, StringIO, BytesIO
 from urllib.parse import quote_plus
-import http.client
 
 from .service import JSON_MIME, _Service
 
