@@ -28,7 +28,7 @@ class DriveStreamingBody:
             if not chunk:
                 break
             yield chunk
-        
+
     def iter_lines(self, chunk_size: int = 1024):
         while True:
             chunk = self.__stream.readline(chunk_size)
