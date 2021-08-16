@@ -7,7 +7,7 @@
     ```
     virtualenv venv
     ```
-3. Activate the virtualenv, by running:
+3. Activate the virtualenv
 
     Mac/Linux
     ```shell
