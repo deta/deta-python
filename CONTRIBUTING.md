@@ -22,8 +22,11 @@ pip install deta
 ## How to run tests
 1. Create an `.env` file with the following variables
     - `DETA_SDK_TEST_PROJECT_KEY`: Project Key for your deta project
-    - `DETA_SDK_TEST_DRIVE_NAME` : Name of your drive 
+    Drive
+    - `DETA_SDK_TEST_DRIVE_NAME` : Name of your Drive 
     - `DETA_SDK_TEST_DRIVE_HOST` : Host URL (default `"drive.deta.sh"`)
+    Base 
+    - `DETA_SDK_TEST_BASE_NAME` : Name of your Base
 2. Run
    ```
    python tests.py
