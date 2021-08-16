@@ -18,3 +18,13 @@ pip install deta
 1. Add changes to `CHANGELOG.md`
 2. Merge the `master` branch with the `release` branch.
 3. After scripts finish, update release and tag with relevant info
+
+## How to run tests
+1. Create an `.env` file with the following variables
+    - `DETA_SDK_TEST_PROJECT_KEY`: Project Key for your deta project
+    - `DETA_SDK_TEST_DRIVE_NAME` : Name of your drive 
+    - `DETA_SDK_TEST_DRIVE_HOST` : Host URL (default `"drive.deta.sh"`)
+2. Run
+   ```
+   python tests.py
+   ``` 
