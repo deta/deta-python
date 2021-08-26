@@ -2,10 +2,10 @@
 .DEFAULT_GOAL := help
 
 test: # Run Unit Test
-	python -m unittest tests
+	pytest tests
 
 test_email: # Test Send Email
-	python -m unittest tests.TestSendEmail
+	pytest tests -k "TestSendEmail"
 
 build: # Build distribution for SDK
 	python setup.py sdist bdist_wheel
