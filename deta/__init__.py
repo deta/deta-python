@@ -1,10 +1,10 @@
-import os
 import urllib.error
 import urllib.request
 import json
 
 from .base import _Base
 from .drive import _Drive
+from .utils import _get_project_key_id
 
 
 try:
@@ -17,15 +17,8 @@ except Exception:
 __version__ = "1.0.0"
 
 
-def _get_project_key_id(project_key: str = None, project_id: str = None):
-    project_key = project_key or os.getenv("DETA_PROJECT_KEY")
-    assert project_key, "No project key defined"
+__version__ = "1.0.0"
 
-    project_id = project_id
-    if not project_id:
-        project_id = project_key.split("_")[0]
-    assert project_id != project_key, "Bad project key provided"
-    return project_key, project_id
 
 
 def Base(name: str):
