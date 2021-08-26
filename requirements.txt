@@ -3,3 +3,8 @@ python-dotenv
 setuptools
 wheel
 twine
+
+# Requirements for testing [async] extra
+aiohttp
+pytest-asyncio
+pytest

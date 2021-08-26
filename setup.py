@@ -14,4 +14,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=["deta"],
+    extras_require={
+        "async": ["aiohttp>=3,<4"],
+    },
 )
