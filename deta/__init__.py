@@ -14,8 +14,10 @@ try:
 except Exception:
     pass
 
-__version__ = "1.0.0"
-
+try:
+    from ._async.client import AsyncDeta, AsyncBase
+except ImportError:
+    pass
 
 __version__ = "1.0.0"
 
