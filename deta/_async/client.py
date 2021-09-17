@@ -8,16 +8,6 @@ from deta.utils import _get_project_key_id
 from deta.base import FetchResponse, Util
 
 
-class AsyncDeta:
-    def __init__(self, project_key: str = None, *, project_id: str = None):
-        project_key, project_id = _get_project_key_id(project_key, project_id)
-        self.project_key = project_key
-        self.project_id = project_id
-
-    def Base(self, name: str, host: str = None) -> "_AsyncBase":
-        return _AsyncBase(name, self.project_key, self.project_id, host)
-
-
 def AsyncBase(name: str):
     project_key, project_id = _get_project_key_id()
     return _AsyncBase(name, project_key, project_id)

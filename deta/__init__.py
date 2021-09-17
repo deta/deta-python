@@ -15,7 +15,7 @@ except Exception:
     pass
 
 try:
-    from ._async.client import AsyncDeta, AsyncBase
+    from ._async.client import AsyncBase
 except ImportError:
     pass
 
@@ -41,6 +41,10 @@ class Deta:
 
     def Base(self, name: str, host: str = None):
         return _Base(name, self.project_key, self.project_id, host)
+
+    def AsyncBase(self, name: str, host: str = None):
+        from ._async.client import _AsyncBase
+        return _AsyncBase(name, self.project_key, self.project_id, host)
 
     def Drive(self, name: str, host: str = None):
         return _Drive(
