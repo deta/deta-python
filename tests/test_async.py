@@ -1,7 +1,7 @@
 from deta.base import FetchResponse
 import os
 import pytest
-from deta import AsyncDeta
+from deta import Deta
 
 try:
     from dotenv import load_dotenv
@@ -22,8 +22,8 @@ async def db():
     assert PROJECT_KEY
     assert BASE_NAME
 
-    deta = AsyncDeta(PROJECT_KEY)
-    db = deta.Base(BASE_NAME)
+    deta = Deta(PROJECT_KEY)
+    db = deta.AsyncBase(BASE_NAME)
 
     yield db
 
