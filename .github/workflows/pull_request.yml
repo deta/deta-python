@@ -27,5 +27,7 @@ jobs:
           DETA_SDK_TEST_BASE_NAME: ${{secrets.DETA_SDK_TEST_BASE_NAME}}
           DETA_SDK_TEST_DRIVE_NAME: ${{secrets.DETA_SDK_TEST_DRIVE_NAME}}
           DETA_SDK_TEST_DRIVE_HOST: ${{secrets.DETA_SDK_TEST_DRIVE_HOST}}
+          PYTHON_VERSION: ${{ matrix.python-version }}
         run: |
-          python3 tests.py
+          $PYTHON_VERSION -m pip install pytest
+          pytest tests 
