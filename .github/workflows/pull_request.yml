@@ -28,4 +28,6 @@ jobs:
           DETA_SDK_TEST_DRIVE_NAME: ${{secrets.DETA_SDK_TEST_DRIVE_NAME}}
           DETA_SDK_TEST_DRIVE_HOST: ${{secrets.DETA_SDK_TEST_DRIVE_HOST}}
         run: |
-          python3 tests.py
+          python -m pip install --upgrade pip
+          python -m pip install pytest pytest-asyncio aiohttp
+          pytest tests 
