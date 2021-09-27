@@ -29,5 +29,5 @@ jobs:
           DETA_SDK_TEST_DRIVE_HOST: ${{secrets.DETA_SDK_TEST_DRIVE_HOST}}
         run: |
           python -m pip install --upgrade pip
-          pip install pytest
+          python -m pip install pytest pytest-asyncio aiohttp
           pytest tests 
