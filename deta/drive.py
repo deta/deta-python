@@ -1,14 +1,15 @@
 import os
 import typing
-import http
 from io import BufferedIOBase, TextIOBase, RawIOBase, StringIO, BytesIO
 from urllib.parse import quote_plus
-import http.client
 
 from .service import JSON_MIME, _Service
 
 # 10 MB upload chunk size
 UPLOAD_CHUNK_SIZE = 1024 * 1024 * 10
+
+# timeout for Drive service in seconds
+DRIVE_SERVICE_TIMEOUT = 300
 
 
 class DriveStreamingBody:
@@ -60,7 +61,7 @@ class _Drive(_Service):
             project_id=project_id,
             host=host,
             name=name,
-            timeout=300,
+            timeout=DRIVE_SERVICE_TIMEOUT,
             keep_alive=False,
         )
 
