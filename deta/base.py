@@ -1,10 +1,11 @@
 import os
-import json
 import typing
 from urllib.parse import quote
 
 from .service import _Service, JSON_MIME
 
+# timeout for Base service in seconds
+BASE_SERVICE_TIMEOUT = 300 
 
 class FetchResponse:
     def __init__(self, count=0, last=None, items=[]):
@@ -77,7 +78,7 @@ class _Base(_Service):
             project_id=project_id,
             host=host,
             name=name,
-            timeout=3,
+            timeout=BASE_SERVICE_TIMEOUT,
         )
         self.util = Util()
 
