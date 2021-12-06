@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="deta",
-    version="1.0.0",
+    version="1.0.1",
     description="Python SDK for Deta Base & Deta Drive.",
     url="http://github.com/deta/deta-python",
     author="Deta",
