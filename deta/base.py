@@ -1,5 +1,6 @@
 import os
 import datetime
+from re import I
 import typing
 from urllib.parse import quote
 
@@ -86,29 +87,6 @@ class _Base(_Service):
         self.__ttl_attribute = "__expires"
         self.util = Util()
 
-    def _insert_ttl(self, item, expire_in=None, expire_at=None):
-        if expire_in and expire_at:
-            raise ValueError("both expire_in and expire_at provided")
-        if not expire_in and not expire_at:
-            return
-
-        if expire_in:
-            expire_at = datetime.datetime.now(
-                datetime.timezone.utc
-            ) + datetime.timedelta(seconds=expire_in)
-
-        if isinstance(expire_at, datetime.datetime):
-            expire_at = (
-                expire_at.astimezone(tz=datetime.timezone.utc)
-                .replace(microsecond=0)
-                .timestamp()
-            )
-
-        if not isinstance(expire_at, (int, float)):
-            raise TypeError("expire_at should one one of int, float or datetime")
-
-        item[self.__ttl_attribute] = int(expire_at)
-
     def get(self, key: str):
         if key == "":
             raise ValueError("Key is empty")
@@ -145,7 +123,7 @@ class _Base(_Service):
         if key:
             data["key"] = key
 
-        self._insert_ttl(data, expire_in=expire_in, expire_at=expire_at)
+        insert_ttl(data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at)
         code, res = self._request(
             "/items", "POST", {"item": data}, content_type=JSON_MIME
         )
@@ -174,7 +152,7 @@ class _Base(_Service):
         if key:
             data["key"] = key
 
-        self._insert_ttl(data, expire_in=expire_in, expire_at=expire_at)
+        insert_ttl(data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at)
         code, res = self._request(
             "/items", "PUT", {"items": [data]}, content_type=JSON_MIME
         )
@@ -183,19 +161,20 @@ class _Base(_Service):
     def put_many(
         self,
         items: typing.List[typing.Union[dict, list, str, int, bool]],
+        *,
         expire_in: int = None,
         expire_at: typing.Union[int, float, datetime.datetime] = None,
     ):
         assert len(items) <= 25, "We can't put more than 25 items at a time."
         _items = []
         for i in items:
+            data = i
             if not isinstance(i, dict):
                 data = {"value": i}
-            else:
-                data = i
-            _items.append(
-                self._insert_ttl(data, expire_in=expire_in, expire_at=expire_at)
+            insert_ttl(
+                data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at
             )
+            _items.append(data)
 
         _, res = self._request(
             "/items", "PUT", {"items": _items}, content_type=JSON_MIME
@@ -241,6 +220,7 @@ class _Base(_Service):
         self,
         updates: dict,
         key: str,
+        *,
         expire_in: int = None,
         expire_at: typing.Union[int, float, datetime.datetime] = None,
     ):
@@ -273,7 +253,12 @@ class _Base(_Service):
                 else:
                     payload["set"][attr] = value
 
-        self._insert_ttl(payload["set"], expire_in=expire_in, expire_at=expire_at)
+        insert_ttl(
+            payload["set"],
+            self.__ttl_attribute,
+            expire_in=expire_in,
+            expire_at=expire_at,
+        )
 
         encoded_key = quote(key, safe="")
         code, _ = self._request(
@@ -283,3 +268,21 @@ class _Base(_Service):
             return None
         elif code == 404:
             raise Exception("Key '{}' not found".format(key))
+
+
+def insert_ttl(item, ttl_attribute, expire_in=None, expire_at=None):
+    if expire_in and expire_at:
+        raise ValueError("both expire_in and expire_at provided")
+    if not expire_in and not expire_at:
+        return
+
+    if expire_in:
+        expire_at = datetime.datetime.now() + datetime.timedelta(seconds=expire_in)
+
+    if isinstance(expire_at, datetime.datetime):
+        expire_at = expire_at.replace(microsecond=0).timestamp()
+
+    if not isinstance(expire_at, (int, float)):
+        raise TypeError("expire_at should one one of int, float or datetime")
+
+    item[ttl_attribute] = int(expire_at)
