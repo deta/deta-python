@@ -1,6 +1,9 @@
 from deta.base import FetchResponse
+import datetime
 import os
 import pytest
+import random
+import string
 from deta import Deta
 
 try:
@@ -15,12 +18,14 @@ pytestmark = pytest.mark.asyncio
 
 PROJECT_KEY = os.getenv("DETA_SDK_TEST_PROJECT_KEY")
 BASE_NAME = os.getenv("DETA_SDK_TEST_BASE_NAME")
+BASE_TEST_TTL_ATTRIBUTE = os.getenv("DETA_SDK_TEST_TTL_ATTRIBUTE")
 
 
 @pytest.fixture()
 async def db():
     assert PROJECT_KEY
     assert BASE_NAME
+    assert BASE_TEST_TTL_ATTRIBUTE
 
     deta = Deta(PROJECT_KEY)
     db = deta.AsyncBase(BASE_NAME)
@@ -239,3 +244,98 @@ async def test_update(db, items):
             {"key": db.util.append("test")},
             "%@#//#!#)#$_",
         )
+
+
+def get_expire_at(expire_at):
+    return int(expire_at.replace(microsecond=0).timestamp())
+
+
+def get_expire_in(expire_in):
+    expire_at = datetime.datetime.now() + datetime.timedelta(seconds=expire_in)
+    return get_expire_at(expire_at)
+
+
+async def test_ttl(db, items):
+    item1 = items[0]
+    expire_in = 300
+    expire_at = datetime.datetime(2022, 3, 1, 12, 30, 30)
+    delta = 2  # allow time delta of 2 seconds
+    test_cases = [
+        {
+            "item": item1,
+            "expire_in": expire_in,
+            "expected_ttl_value": get_expire_in(expire_in),
+            "delta": delta,
+        },
+        {
+            "item": item1,
+            "expire_at": expire_at,
+            "expected_ttl_value": get_expire_at(expire_at),
+            "delta": delta,
+        },
+        {
+            "item": item1,
+            "expire_in": expire_in,
+            "expire_at": expire_at,
+            "delta": delta,
+            "error": ValueError,
+        },
+        {
+            "item": item1,
+            "expire_in": "randomtest",
+            "delta": delta,
+            "error": TypeError,
+        },
+        {
+            "item": item1,
+            "expire_at": "not a datetime, int or float",
+            "error": TypeError,
+            "delta": delta,
+        },
+    ]
+
+    for case in test_cases:
+        item = case.get("item")
+        cexp_in = case.get("expire_in")
+        cexp_at = case.get("expire_at")
+        expected = case.get("expected_ttl_value")
+        error = case.get("error")
+        cdelta = case.get("delta")
+
+        if not case.get("error"):
+            # put
+            await db.put(item, expire_in=cexp_in, expire_at=cexp_at)
+            got = await db.get(item.get("key"))
+            assert abs(expected - got.get(BASE_TEST_TTL_ATTRIBUTE)) <= cdelta
+
+            # insert
+            # need to udpate key as insert does not allow pre existing key
+            item["key"] = "".join(random.choices(string.ascii_lowercase, k=6))
+            await db.insert(item, expire_in=cexp_in, expire_at=cexp_at)
+            got = await db.get(item.get("key"))
+            assert abs(expected - got.get(BASE_TEST_TTL_ATTRIBUTE)) <= cdelta
+
+            # put many
+            await db.put_many([item], expire_in=cexp_in, expire_at=cexp_at)
+            got = await db.get(item.get("key"))
+            assert abs(expected - got.get(BASE_TEST_TTL_ATTRIBUTE)) <= cdelta
+
+            # update
+            # only if one of expire_in or expire_at
+            if cexp_in or cexp_at:
+                await db.update(
+                    None, item.get("key"), expire_in=cexp_in, expire_at=cexp_at
+                )
+                got = await db.get(item.get("key"))
+                assert abs(expected - got.get(BASE_TEST_TTL_ATTRIBUTE)) <= cdelta
+        else:
+            with pytest.raises(error):
+                await db.put(item, expire_in=cexp_in, expire_at=cexp_at)
+            with pytest.raises(error):
+                await db.put_many([item], expire_in=cexp_in, expire_at=cexp_at)
+            with pytest.raises(error):
+                await db.insert(item, expire_in=cexp_in, expire_at=cexp_at)
+            with pytest.raises(error):
+                await db.update(
+                    None, item.get("key"), expire_in=cexp_in, expire_at=cexp_at
+                )

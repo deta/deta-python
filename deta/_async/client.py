@@ -1,11 +1,12 @@
 import typing
 
+import datetime
 import os
 import aiohttp
 from urllib.parse import quote
 
 from deta.utils import _get_project_key_id
-from deta.base import FetchResponse, Util
+from deta.base import FetchResponse, Util, insert_ttl, BASE_TTL_ATTTRIBUTE
 
 
 def AsyncBase(name: str):
@@ -22,6 +23,7 @@ class _AsyncBase:
         self._base_url = f"https://{host}/v1/{project_id}/{name}"
 
         self.util = Util()
+        self.__ttl_attribute = BASE_TTL_ATTTRIBUTE
 
         self._session = aiohttp.ClientSession(
             headers={
@@ -53,7 +55,11 @@ class _AsyncBase:
             return
 
     async def insert(
-        self, data: typing.Union[dict, list, str, int, bool], key: str = None
+        self,
+        data: typing.Union[dict, list, str, int, bool],
+        key: str = None,
+        expire_in: int = None,
+        expire_at: typing.Union[int, float, datetime.datetime] = None,
     ):
         if not isinstance(data, dict):
             data = {"value": data}
@@ -63,13 +69,18 @@ class _AsyncBase:
         if key:
             data["key"] = key
 
+        insert_ttl(data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at)
         async with self._session.post(
             f"{self._base_url}/items", json={"item": data}
         ) as resp:
             return await resp.json()
 
     async def put(
-        self, data: typing.Union[dict, list, str, int, bool], key: str = None
+        self,
+        data: typing.Union[dict, list, str, int, bool],
+        key: str = None,
+        expire_in: int = None,
+        expire_at: typing.Union[int, float, datetime.datetime] = None,
     ):
         if not isinstance(data, dict):
             data = {"value": data}
@@ -79,6 +90,7 @@ class _AsyncBase:
         if key:
             data["key"] = key
 
+        insert_ttl(data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at)
         async with self._session.put(
             f"{self._base_url}/items", json={"items": [data]}
         ) as resp:
@@ -89,16 +101,23 @@ class _AsyncBase:
                 return None
 
     async def put_many(
-        self, items: typing.List[typing.Union[dict, list, str, int, bool]]
+        self,
+        items: typing.List[typing.Union[dict, list, str, int, bool]],
+        *,
+        expire_in: int = None,
+        expire_at: typing.Union[int, float, datetime.datetime] = None,
     ):
         if len(items) > 25:
             raise AssertionError("We can't put more than 25 items at a time.")
         _items = []
         for i in items:
+            data = i
             if not isinstance(i, dict):
-                _items.append({"value": i})
-            else:
-                _items.append(i)
+                data = {"value": i}
+            insert_ttl(
+                data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at
+            )
+            _items.append(data)
 
         async with self._session.put(
             f"{self._base_url}/items", json={"items": _items}
@@ -126,7 +145,14 @@ class _AsyncBase:
                 paging.get("size"), paging.get("last"), resp_json.get("items")
             )
 
-    async def update(self, updates: dict, key: str):
+    async def update(
+        self,
+        updates: dict,
+        key: str,
+        *,
+        expire_in: int = None,
+        expire_at: typing.Union[int, float, datetime.datetime] = None,
+    ):
         if key == "":
             raise ValueError("Key is empty")
 
@@ -137,20 +163,28 @@ class _AsyncBase:
             "prepend": {},
             "delete": [],
         }
-        for attr, value in updates.items():
-            if isinstance(value, Util.Trim):
-                payload["delete"].append(attr)
-            elif isinstance(value, Util.Increment):
-                payload["increment"][attr] = value.val
-            elif isinstance(value, Util.Append):
-                payload["append"][attr] = value.val
-            elif isinstance(value, Util.Prepend):
-                payload["prepend"][attr] = value.val
-            else:
-                payload["set"][attr] = value
+        if updates:
+            for attr, value in updates.items():
+                if isinstance(value, Util.Trim):
+                    payload["delete"].append(attr)
+                elif isinstance(value, Util.Increment):
+                    payload["increment"][attr] = value.val
+                elif isinstance(value, Util.Append):
+                    payload["append"][attr] = value.val
+                elif isinstance(value, Util.Prepend):
+                    payload["prepend"][attr] = value.val
+                else:
+                    payload["set"][attr] = value
 
         if not payload:
             raise ValueError("Provide at least one update action.")
+
+        insert_ttl(
+            payload["set"],
+            self.__ttl_attribute,
+            expire_in=expire_in,
+            expire_at=expire_at,
+        )
 
         key = quote(key, safe="")
 
