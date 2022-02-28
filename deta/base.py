@@ -112,6 +112,7 @@ class _Base(_Service):
         self,
         data: typing.Union[dict, list, str, int, bool],
         key: str = None,
+        *,
         expire_in: int = None,
         expire_at: typing.Union[int, float, datetime.datetime] = None,
     ):
@@ -136,6 +137,7 @@ class _Base(_Service):
         self,
         data: typing.Union[dict, list, str, int, bool],
         key: str = None,
+        *,
         expire_in: int = None,
         expire_at: typing.Union[int, float, datetime.datetime] = None,
     ):
