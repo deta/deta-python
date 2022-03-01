@@ -1,9 +1,13 @@
+import datetime
+import io
+import os
+import random
+import string
+import unittest
+
+from deta import Deta
 from deta.drive import UPLOAD_CHUNK_SIZE
 from deta.base import FetchResponse
-import os
-import io
-import unittest
-from deta import Deta
 
 try:
     from dotenv import load_dotenv
@@ -13,7 +17,8 @@ except:
     pass
 
 
-"""class TestSendEmail(unittest.TestCase):
+"""
+class TestSendEmail(unittest.TestCase):
     def setUp(self):
         self.deta = Deta()
 
@@ -184,6 +189,7 @@ class TestBaseMethods(unittest.TestCase):
         self.assertIsNotNone(name)
         deta = Deta(key)
         self.db = deta.Base(str(name))
+        self.ttl_attribute = os.getenv("DETA_SDK_TEST_TTL_ATTRIBUTE") or "__expires"
         self.item1 = {"key": "existing1", "value": "test"}
         self.item2 = {"key": "existing2", "value": 7}
         self.item3 = {"key": "existing3", "value": 44}
@@ -366,6 +372,124 @@ class TestBaseMethods(unittest.TestCase):
             {"key": self.db.util.append("test")},
             "%@#//#!#)#$_",
         )
+
+    def get_expire_at(self, expire_at):
+        return int(expire_at.replace(microsecond=0).timestamp())
+
+    def get_expire_in(self, expire_in):
+        expire_at = datetime.datetime.now() + datetime.timedelta(seconds=expire_in)
+        return self.get_expire_at(expire_at)
+
+    def test_ttl(self):
+        expire_in = 300
+        expire_at = datetime.datetime(2022, 3, 1, 12, 30, 30)
+        delta = 2  # allow time delta of 2 seconds
+        test_cases = [
+            {
+                "item": self.item1,
+                "expire_in": expire_in,
+                "expected_ttl_value": self.get_expire_in(expire_in),
+                "delta": delta,
+            },
+            {
+                "item": self.item1,
+                "expire_at": expire_at,
+                "expected_ttl_value": self.get_expire_at(expire_at),
+                "delta": delta,
+            },
+            {
+                "item": self.item2,
+                "expected_ttl_value": None,
+                "delta": delta,
+            },
+            {
+                "item": self.item1,
+                "expire_in": expire_in,
+                "expire_at": expire_at,
+                "delta": delta,
+                "expected_ttl_value": None,
+                "error": ValueError,
+            },
+            {
+                "item": self.item1,
+                "expire_in": "randomtest",
+                "expected_ttl_value": None,
+                "delta": delta,
+                "error": TypeError,
+            },
+            {
+                "item": self.item1,
+                "expire_at": "not a datetime, int or float",
+                "expected_ttl_value": None,
+                "error": TypeError,
+                "delta": delta,
+            },
+        ]
+
+        for case in test_cases:
+            item = case.get("item")
+            cexp_in = case.get("expire_in")
+            cexp_at = case.get("expire_at")
+            expected = case.get("expected_ttl_value")
+            error = case.get("error")
+            cdelta = case.get("delta")
+
+            if not case.get("error"):
+                # put
+                self.db.put(item, expire_in=cexp_in, expire_at=cexp_at)
+                got = self.db.get(item.get("key"))
+                self.assertAlmostEqual(
+                    expected, got.get(self.ttl_attribute), delta=cdelta
+                )
+
+                # insert
+                # need to udpate key as insert does not allow pre existing key
+                item["key"] = "".join(random.choices(string.ascii_lowercase, k=6))
+                self.db.insert(item, expire_in=cexp_in, expire_at=cexp_at)
+                got = self.db.get(item.get("key"))
+                self.assertAlmostEqual(
+                    expected, got.get(self.ttl_attribute), delta=cdelta
+                )
+
+                # put many
+                self.db.put_many([item], expire_in=cexp_in, expire_at=cexp_at)
+                got = self.db.get(item.get("key"))
+                self.assertAlmostEqual(
+                    expected, got.get(self.ttl_attribute), delta=cdelta
+                )
+
+                # update
+                # only if one of expire_in or expire_at
+                if cexp_in or cexp_at:
+                    self.db.update(
+                        None, item.get("key"), expire_in=cexp_in, expire_at=cexp_at
+                    )
+                    got = self.db.get(item.get("key"))
+                    self.assertAlmostEqual(
+                        expected, got.get(self.ttl_attribute), delta=cdelta
+                    )
+            else:
+                self.assertRaises(
+                    error, self.db.put, item, expire_in=cexp_in, expire_at=cexp_at
+                )
+                self.assertRaises(
+                    error, self.db.insert, item, expire_in=cexp_in, expire_at=cexp_at
+                )
+                self.assertRaises(
+                    error,
+                    self.db.put_many,
+                    [item],
+                    expire_in=cexp_in,
+                    expire_at=cexp_at,
+                )
+                self.assertRaises(
+                    error,
+                    self.db.update,
+                    None,
+                    item.get("key"),
+                    expire_in=cexp_in,
+                    expire_at=cexp_at,
+                )
 
 
 if __name__ == "__main__":
