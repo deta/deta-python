@@ -29,7 +29,7 @@ class DriveStreamingBody:
             if not chunk:
                 break
             yield chunk
-        
+
     def iter_lines(self, chunk_size: int = 1024):
         while True:
             chunk = self.__stream.readline(chunk_size)
@@ -74,9 +74,7 @@ class _Drive(_Service):
         Returns a DriveStreamingBody.
         """
         assert name, "No name provided"
-        _, res = self._request(
-            f"/files/download?name={self._quote(name)}", "GET", stream=True
-        )
+        _, res = self._request(f"/files/download?name={self._quote(name)}", "GET", stream=True)
         if res:
             return DriveStreamingBody(res)
         return None
@@ -88,12 +86,10 @@ class _Drive(_Service):
         """
         assert names, "Names is empty"
         assert len(names) <= 1000, "More than 1000 names to delete"
-        _, res = self._request(
-            "/files", "DELETE", {"names": names}, content_type=JSON_MIME
-        )
+        _, res = self._request("/files", "DELETE", {"names": names}, content_type=JSON_MIME)
         return res
 
-    def delete(self, name: str):
+    def delete(self, name: str):  # sourcery skip: raise-specific-error
         """Delete a file from drive.
         `name` is the name of the file.
         Returns the name of the file deleted.

@@ -23,7 +23,6 @@ except ImportError:
 __version__ = "1.1.0"
 
 
-
 def Base(name: str):
     project_key, project_id = _get_project_key_id()
     return _Base(name, project_key, project_id)
@@ -45,6 +44,7 @@ class Deta:
 
     def AsyncBase(self, name: str, host: str = None):
         from ._async.client import _AsyncBase
+
         return _AsyncBase(name, self.project_key, self.project_id, host)
 
     def Drive(self, name: str, host: str = None):
@@ -80,6 +80,6 @@ def send_email(to, subject, message, charset="UTF-8"):
     try:
         resp = urllib.request.urlopen(req)
         if resp.getcode() != 200:
-            raise Exception(resp.read().decode("utf-8"))
+            raise ValueError(resp.read().decode("utf-8"))
     except urllib.error.URLError as e:
-        raise Exception(e.reason)
+        raise Exception(e.reason) from e
