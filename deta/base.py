@@ -12,7 +12,9 @@ BASE_TTL_ATTTRIBUTE = "__expires"
 
 
 class FetchResponse:
-    def __init__(self, count=0, last=None, items=[]):
+    def __init__(self, count=0, last=None, items=None):
+        if items is None:
+            items = []
         self._count = count
         self._last = last
         self._items = items
@@ -30,11 +32,7 @@ class FetchResponse:
         return self._items
 
     def __eq__(self, other):
-        return (
-            self.count == other.count
-            and self.last == other.last
-            and self.items == other.items
-        )
+        return self.count == other.count and self.last == other.last and self.items == other.items
 
 
 class Util:
@@ -88,24 +86,24 @@ class _Base(_Service):
         self.util = Util()
 
     def get(self, key: str):
-        if key == "":
+        if not key:
             raise ValueError("Key is empty")
 
         # encode key
         key = quote(key, safe="")
-        _, res = self._request("/items/{}".format(key), "GET")
+        _, res = self._request(f"/items/{key}", "GET")
         return res or None
 
     def delete(self, key: str):
         """Delete an item from the database
         key: the key of item to be deleted
         """
-        if key == "":
+        if not key:
             raise ValueError("Key is empty")
 
         # encode key
         key = quote(key, safe="")
-        self._request("/items/{}".format(key), "DELETE")
+        self._request(f"/items/{key}", "DELETE")
         return None
 
     def insert(
@@ -116,22 +114,16 @@ class _Base(_Service):
         expire_in: int = None,
         expire_at: typing.Union[int, float, datetime.datetime] = None,
     ):
-        if not isinstance(data, dict):
-            data = {"value": data}
-        else:
-            data = data.copy()
-
+        data = data.copy() if isinstance(data, dict) else {"value": data}
         if key:
             data["key"] = key
 
         insert_ttl(data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at)
-        code, res = self._request(
-            "/items", "POST", {"item": data}, content_type=JSON_MIME
-        )
+        code, res = self._request("/items", "POST", {"item": data}, content_type=JSON_MIME)
         if code == 201:
             return res
         elif code == 409:
-            raise Exception("Item with key '{4}' already exists".format(key))
+            raise ValueError("Item with key '{4}' already exists".format(key))
 
     def put(
         self,
@@ -146,18 +138,12 @@ class _Base(_Service):
         If `key` is not provided, the server will generate a random 12 chars key.
         """
 
-        if not isinstance(data, dict):
-            data = {"value": data}
-        else:
-            data = data.copy()
-
+        data = data.copy() if isinstance(data, dict) else {"value": data}
         if key:
             data["key"] = key
 
         insert_ttl(data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at)
-        code, res = self._request(
-            "/items", "PUT", {"items": [data]}, content_type=JSON_MIME
-        )
+        code, res = self._request("/items", "PUT", {"items": [data]}, content_type=JSON_MIME)
         return res["processed"]["items"][0] if res and code == 207 else None
 
     def put_many(
@@ -173,14 +159,10 @@ class _Base(_Service):
             data = i
             if not isinstance(i, dict):
                 data = {"value": i}
-            insert_ttl(
-                data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at
-            )
+            insert_ttl(data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at)
             _items.append(data)
 
-        _, res = self._request(
-            "/items", "PUT", {"items": _items}, content_type=JSON_MIME
-        )
+        _, res = self._request("/items", "PUT", {"items": _items}, content_type=JSON_MIME)
         return res
 
     def _fetch(
@@ -190,10 +172,7 @@ class _Base(_Service):
         last: str = None,
     ) -> typing.Optional[typing.Tuple[int, list]]:
         """This is where actual fetch happens."""
-        payload = {
-            "limit": buffer,
-            "last": last if not isinstance(last, bool) else None,
-        }
+        payload = {"limit": buffer, "last": None if isinstance(last, bool) else last}
 
         if query:
             payload["query"] = query if isinstance(query, list) else [query]
@@ -232,7 +211,7 @@ class _Base(_Service):
         `key` is the kye of the item to be updated
         """
 
-        if key == "":
+        if not key:
             raise ValueError("Key is empty")
 
         payload = {
@@ -263,13 +242,12 @@ class _Base(_Service):
         )
 
         encoded_key = quote(key, safe="")
-        code, _ = self._request(
-            "/items/{}".format(encoded_key), "PATCH", payload, content_type=JSON_MIME
-        )
+        code, _ = self._request(f"/items/{encoded_key}", "PATCH", payload, content_type=JSON_MIME)
+
         if code == 200:
             return None
         elif code == 404:
-            raise Exception("Key '{}' not found".format(key))
+            raise ValueError(f"Key '{key}' not found")
 
 
 def insert_ttl(item, ttl_attribute, expire_in=None, expire_at=None):
