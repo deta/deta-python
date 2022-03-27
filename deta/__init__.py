@@ -23,14 +23,14 @@ except ImportError:
 __version__ = "1.1.0"
 
 
-def Base(name: str):
+def Base(name: str, host: str = None):
     project_key, project_id = _get_project_key_id()
-    return _Base(name, project_key, project_id)
+    return _Base(name, project_key, project_id, host)
 
 
-def Drive(name: str):
+def Drive(name: str, host: str = None):
     project_key, project_id = _get_project_key_id()
-    return _Drive(name, project_key, project_id)
+    return _Drive(name, project_key, project_id, host)
 
 
 class Deta:
