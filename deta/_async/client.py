@@ -71,9 +71,7 @@ class _AsyncBase:
             data["key"] = key
 
         insert_ttl(data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at)
-        async with self._session.post(
-            f"{self._base_url}/items", json={"item": data}
-        ) as resp:
+        async with self._session.post(f"{self._base_url}/items", json={"item": data}) as resp:
             return await resp.json()
 
     async def put(
@@ -93,9 +91,7 @@ class _AsyncBase:
             data["key"] = key
 
         insert_ttl(data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at)
-        async with self._session.put(
-            f"{self._base_url}/items", json={"items": [data]}
-        ) as resp:
+        async with self._session.put(f"{self._base_url}/items", json={"items": [data]}) as resp:
             if resp.status == 207:
                 resp_json = await resp.json()
                 return resp_json["processed"]["items"][0]
@@ -117,14 +113,10 @@ class _AsyncBase:
             data = i
             if not isinstance(i, dict):
                 data = {"value": i}
-            insert_ttl(
-                data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at
-            )
+            insert_ttl(data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at)
             _items.append(data)
 
-        async with self._session.put(
-            f"{self._base_url}/items", json={"items": _items}
-        ) as resp:
+        async with self._session.put(f"{self._base_url}/items", json={"items": _items}) as resp:
             return await resp.json()
 
     async def fetch(
@@ -144,9 +136,7 @@ class _AsyncBase:
         async with self._session.post(f"{self._base_url}/query", json=payload) as resp:
             resp_json = await resp.json()
             paging = resp_json.get("paging")
-            return FetchResponse(
-                paging.get("size"), paging.get("last"), resp_json.get("items")
-            )
+            return FetchResponse(paging.get("size"), paging.get("last"), resp_json.get("items"))
 
     async def update(
         self,

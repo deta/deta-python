@@ -283,9 +283,7 @@ class TestBaseMethods(unittest.TestCase):
         )
         self.assertEqual(res3, expectedItem)
 
-        res4 = self.db.fetch(
-            [{"value?gt": 6}, {"value?lt": 50}], limit=2, last="existing2"
-        )
+        res4 = self.db.fetch([{"value?gt": 6}, {"value?lt": 50}], limit=2, last="existing2")
         expectedItem = FetchResponse(
             1,
             None,
@@ -323,9 +321,7 @@ class TestBaseMethods(unittest.TestCase):
         self.assertEqual(self.db.get("existing4"), expectedItem)
 
         self.assertIsNone(
-            self.db.update(
-                {"value.name": self.db.util.trim(), "value.age": 32}, "existing4"
-            )
+            self.db.update({"value.name": self.db.util.trim(), "value.age": 32}, "existing4")
         )
         expectedItem = {"key": "existing4", "value": {"age": 32}}
         self.assertEqual(self.db.get("existing4"), expectedItem)
@@ -438,43 +434,29 @@ class TestBaseMethods(unittest.TestCase):
                 # put
                 self.db.put(item, expire_in=cexp_in, expire_at=cexp_at)
                 got = self.db.get(item.get("key"))
-                self.assertAlmostEqual(
-                    expected, got.get(self.ttl_attribute), delta=cdelta
-                )
+                self.assertAlmostEqual(expected, got.get(self.ttl_attribute), delta=cdelta)
 
                 # insert
                 # need to udpate key as insert does not allow pre existing key
                 item["key"] = "".join(random.choices(string.ascii_lowercase, k=6))
                 self.db.insert(item, expire_in=cexp_in, expire_at=cexp_at)
                 got = self.db.get(item.get("key"))
-                self.assertAlmostEqual(
-                    expected, got.get(self.ttl_attribute), delta=cdelta
-                )
+                self.assertAlmostEqual(expected, got.get(self.ttl_attribute), delta=cdelta)
 
                 # put many
                 self.db.put_many([item], expire_in=cexp_in, expire_at=cexp_at)
                 got = self.db.get(item.get("key"))
-                self.assertAlmostEqual(
-                    expected, got.get(self.ttl_attribute), delta=cdelta
-                )
+                self.assertAlmostEqual(expected, got.get(self.ttl_attribute), delta=cdelta)
 
                 # update
                 # only if one of expire_in or expire_at
                 if cexp_in or cexp_at:
-                    self.db.update(
-                        None, item.get("key"), expire_in=cexp_in, expire_at=cexp_at
-                    )
+                    self.db.update(None, item.get("key"), expire_in=cexp_in, expire_at=cexp_at)
                     got = self.db.get(item.get("key"))
-                    self.assertAlmostEqual(
-                        expected, got.get(self.ttl_attribute), delta=cdelta
-                    )
+                    self.assertAlmostEqual(expected, got.get(self.ttl_attribute), delta=cdelta)
             else:
-                self.assertRaises(
-                    error, self.db.put, item, expire_in=cexp_in, expire_at=cexp_at
-                )
-                self.assertRaises(
-                    error, self.db.insert, item, expire_in=cexp_in, expire_at=cexp_at
-                )
+                self.assertRaises(error, self.db.put, item, expire_in=cexp_in, expire_at=cexp_at)
+                self.assertRaises(error, self.db.insert, item, expire_in=cexp_in, expire_at=cexp_at)
                 self.assertRaises(
                     error,
                     self.db.put_many,

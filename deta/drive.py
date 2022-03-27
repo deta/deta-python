@@ -76,9 +76,7 @@ class _Drive(_Service):
         """
         if not name:
             raise ValueError("Drive name not provided or empty")
-        _, res = self._request(
-            f"/files/download?name={self._quote(name)}", "GET", stream=True
-        )
+        _, res = self._request(f"/files/download?name={self._quote(name)}", "GET", stream=True)
         if res:
             return DriveStreamingBody(res)
         return None
@@ -92,9 +90,7 @@ class _Drive(_Service):
             raise ValueError("Names is empty")
         if len(names) > 1000:
             raise ValueError("More than 1000 names to delete")
-        _, res = self._request(
-            "/files", "DELETE", {"names": names}, content_type=JSON_MIME
-        )
+        _, res = self._request("/files", "DELETE", {"names": names}, content_type=JSON_MIME)
         return res
 
     def delete(self, name: str):

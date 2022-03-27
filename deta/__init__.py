@@ -44,6 +44,7 @@ class Deta:
 
     def AsyncBase(self, name: str, host: str = None):
         from ._async.client import _AsyncBase
+
         return _AsyncBase(name, self.project_key, self.project_id, host)
 
     def Drive(self, name: str, host: str = None):
