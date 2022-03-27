@@ -1,6 +1,6 @@
 name: Lint and tag before release
 
-on: 
+on:
   push:
    branches:
     - release
@@ -16,7 +16,7 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@v2
       with:
-        python-version: ^3.5
+        python-version: ^3.6
     # Install dependencies
     - name: Install dependencies
       run: "scripts/install"

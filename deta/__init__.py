@@ -23,7 +23,6 @@ except ImportError:
 __version__ = "1.1.0"
 
 
-
 def Base(name: str):
     project_key, project_id = _get_project_key_id()
     return _Base(name, project_key, project_id)
@@ -65,7 +64,7 @@ def send_email(to, subject, message, charset="UTF-8"):
     api_key = os.getenv("DETA_PROJECT_KEY")
     endpoint = f"{url}/mail/{pid}"
 
-    to = to if type(to) == list else [to]
+    to = to if isinstance(to, list) else [to]
     data = {
         "to": to,
         "subject": subject,

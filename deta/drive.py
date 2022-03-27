@@ -29,7 +29,7 @@ class DriveStreamingBody:
             if not chunk:
                 break
             yield chunk
-        
+
     def iter_lines(self, chunk_size: int = 1024):
         while True:
             chunk = self.__stream.readline(chunk_size)
@@ -41,7 +41,7 @@ class DriveStreamingBody:
         # close stream
         try:
             self.__stream.close()
-        except:
+        except Exception:
             pass
 
 
@@ -53,7 +53,8 @@ class _Drive(_Service):
         project_id: str = None,
         host: str = None,
     ):
-        assert name, "No Drive name provided"
+        if not name:
+            raise ValueError("Drive name not provided or empty")
         host = host or os.getenv("DETA_DRIVE_HOST") or "drive.deta.sh"
 
         super().__init__(
@@ -73,7 +74,8 @@ class _Drive(_Service):
         `name` is the name of the file.
         Returns a DriveStreamingBody.
         """
-        assert name, "No name provided"
+        if not name:
+            raise ValueError("Drive name not provided or empty")
         _, res = self._request(
             f"/files/download?name={self._quote(name)}", "GET", stream=True
         )
@@ -86,8 +88,10 @@ class _Drive(_Service):
         `names` are the names of the files to be deleted.
         Returns a dict with 'deleted' and 'failed' files.
         """
-        assert names, "Names is empty"
-        assert len(names) <= 1000, "More than 1000 names to delete"
+        if not names:
+            raise ValueError("Names is empty")
+        if len(names) > 1000:
+            raise ValueError("More than 1000 names to delete")
         _, res = self._request(
             "/files", "DELETE", {"names": names}, content_type=JSON_MIME
         )
@@ -98,7 +102,8 @@ class _Drive(_Service):
         `name` is the name of the file.
         Returns the name of the file deleted.
         """
-        assert name, "Name not provided or empty"
+        if not name:
+            raise ValueError("Name not provided or empty")
         payload = self.delete_many([name])
         failed = payload.get("failed")
         if failed:
@@ -168,9 +173,12 @@ class _Drive(_Service):
         `content_type` is the mime type of the file.
         Returns the name of the file.
         """
-        assert name, "No name provided"
-        assert path or data, "No data or path provided"
-        assert not (path and data), "Both path and data provided"
+        if not name:
+            raise ValueError("Name not provided or empty")
+        if not path and not data:
+            raise ValueError("No data or path provided")
+        if path and data:
+            raise ValueError("Both path and data provided")
 
         # start upload
         upload_id = self._start_upload(name)
@@ -181,7 +189,7 @@ class _Drive(_Service):
         # upload chunks
         while True:
             chunk = content_stream.read(UPLOAD_CHUNK_SIZE)
-            ## eof stop the loop
+            # eof stop the loop
             if not chunk:
                 self._finish_upload(name, upload_id)
                 content_stream.close()

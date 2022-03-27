@@ -1,6 +1,5 @@
 import os
 import datetime
-from re import I
 import typing
 from urllib.parse import quote
 
@@ -74,7 +73,8 @@ class Util:
 
 class _Base(_Service):
     def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
-        assert name, "No Base name provided"
+        if not name:
+            raise ValueError("Base name not provided or empty")
 
         host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
         super().__init__(
@@ -93,7 +93,7 @@ class _Base(_Service):
 
         # encode key
         key = quote(key, safe="")
-        _, res = self._request("/items/{}".format(key), "GET")
+        _, res = self._request(f"/items/{key}", "GET")
         return res or None
 
     def delete(self, key: str):
@@ -105,7 +105,7 @@ class _Base(_Service):
 
         # encode key
         key = quote(key, safe="")
-        self._request("/items/{}".format(key), "DELETE")
+        self._request(f"/items/{key}", "DELETE")
         return None
 
     def insert(
@@ -131,7 +131,7 @@ class _Base(_Service):
         if code == 201:
             return res
         elif code == 409:
-            raise Exception("Item with key '{4}' already exists".format(key))
+            raise Exception(f"Item with key '{key}' already exists")
 
     def put(
         self,
@@ -167,7 +167,8 @@ class _Base(_Service):
         expire_in: int = None,
         expire_at: typing.Union[int, float, datetime.datetime] = None,
     ):
-        assert len(items) <= 25, "We can't put more than 25 items at a time."
+        if len(items) > 25:
+            raise ValueError("Cannot put more than 25 items at a time")
         _items = []
         for i in items:
             data = i
@@ -264,17 +265,17 @@ class _Base(_Service):
 
         encoded_key = quote(key, safe="")
         code, _ = self._request(
-            "/items/{}".format(encoded_key), "PATCH", payload, content_type=JSON_MIME
+            f"/items/{encoded_key}", "PATCH", payload, content_type=JSON_MIME
         )
         if code == 200:
             return None
         elif code == 404:
-            raise Exception("Key '{}' not found".format(key))
+            raise Exception(f"Key '{key}' not found")
 
 
 def insert_ttl(item, ttl_attribute, expire_in=None, expire_at=None):
     if expire_in and expire_at:
-        raise ValueError("both expire_in and expire_at provided")
+        raise ValueError("Both expire_in and expire_at provided")
     if not expire_in and not expire_at:
         return
 

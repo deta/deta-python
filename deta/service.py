@@ -20,7 +20,7 @@ class _Service:
         keep_alive: bool = True,
     ):
         self.project_key = project_key
-        self.base_path = "/v1/{0}/{1}".format(project_id, name)
+        self.base_path = f"/v1/{project_id}/{name}"
         self.host = host
         self.timeout = timeout
         self.keep_alive = keep_alive
@@ -66,7 +66,7 @@ class _Service:
                 and self._is_socket_closed()
             ):
                 self.client.close()
-        except:
+        except Exception:
             pass
 
         # send request
@@ -81,16 +81,16 @@ class _Service:
             res.read()
             if not self.keep_alive:
                 self.client.close()
-            ## return None if not found
+            # return None if not found
             if status == 404:
                 return status, None
             raise urllib.error.HTTPError(url, status, res.reason, res.headers, res.fp)
 
-        ## if stream return the response and client without reading and closing the client
+        # if stream return the response and client without reading and closing the client
         if stream:
             return status, res
 
-        ## return json if application/json
+        # return json if application/json
         payload = (
             json.loads(res.read())
             if JSON_MIME in res.getheader("content-type")

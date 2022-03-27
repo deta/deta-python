@@ -17,7 +17,7 @@ def AsyncBase(name: str):
 class _AsyncBase:
     def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
         if not project_key:
-            raise AssertionError("No Base name provided")
+            raise ValueError("Base name not provided or empty")
 
         host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
         self._base_url = f"https://{host}/v1/{project_id}/{name}"
@@ -110,7 +110,8 @@ class _AsyncBase:
         expire_at: typing.Union[int, float, datetime.datetime] = None,
     ):
         if len(items) > 25:
-            raise AssertionError("We can't put more than 25 items at a time.")
+            raise ValueError("Cannot put more than 25 items at a time")
+
         _items = []
         for i in items:
             data = i
