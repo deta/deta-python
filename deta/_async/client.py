@@ -9,13 +9,21 @@ from deta.utils import _get_project_key_id
 from deta.base import FetchResponse, Util, insert_ttl, BASE_TTL_ATTTRIBUTE
 
 
-def AsyncBase(name: str):
+def AsyncBase(name: str, *, session: aiohttp.ClientSession = None):
     project_key, project_id = _get_project_key_id()
-    return _AsyncBase(name, project_key, project_id)
+    return _AsyncBase(name, project_key, project_id, session=session)
 
 
 class _AsyncBase:
-    def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
+    def __init__(
+            self,
+            name: str,
+            project_key: str,
+            project_id: str,
+            *,
+            host: str = None,
+            session: aiohttp.ClientSession = None
+    ):
         if not project_key:
             raise AssertionError("No Base name provided")
 
@@ -25,7 +33,7 @@ class _AsyncBase:
         self.util = Util()
         self.__ttl_attribute = BASE_TTL_ATTTRIBUTE
 
-        self._session = aiohttp.ClientSession(
+        self._session = session or aiohttp.ClientSession(
             headers={
                 "Content-type": "application/json",
                 "X-API-Key": project_key,
