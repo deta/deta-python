@@ -81,16 +81,16 @@ class _Service:
             res.read()
             if not self.keep_alive:
                 self.client.close()
-            ## return None if not found
+            # return None if not found
             if status == 404:
                 return status, None
             raise urllib.error.HTTPError(url, status, res.reason, res.headers, res.fp)
 
-        ## if stream return the response and client without reading and closing the client
+        # if stream return the response and client without reading and closing the client
         if stream:
             return status, res
 
-        ## return json if application/json
+        # return json if application/json
         payload = (
             json.loads(res.read())
             if JSON_MIME in res.getheader("content-type")
@@ -109,10 +109,10 @@ class _Service:
         body: typing.Union[str, bytes, dict] = None,
         retry=2,  # try at least twice to regain a new connection
     ):
-        reinitializeConnection = False
+        reinitialize_connection = False
         while retry > 0:
             try:
-                if not self.keep_alive or reinitializeConnection:
+                if not self.keep_alive or reinitialize_connection:
                     self.client = http.client.HTTPSConnection(
                         host=self.host, timeout=self.timeout
                     )
@@ -126,5 +126,5 @@ class _Service:
                 res = self.client.getresponse()
                 return res
             except http.client.RemoteDisconnected:
-                reinitializeConnection = True
+                reinitialize_connection = True
                 retry -= 1

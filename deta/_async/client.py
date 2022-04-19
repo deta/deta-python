@@ -6,7 +6,7 @@ import aiohttp
 from urllib.parse import quote
 
 from deta.utils import _get_project_key_id
-from deta.base import FetchResponse, Util, insert_ttl, BASE_TTL_ATTTRIBUTE
+from deta.base import FetchResponse, Util, insert_ttl, BASE_TTL_ATTRIBUTE
 
 
 def AsyncBase(name: str, *, session: aiohttp.ClientSession = None):
@@ -31,7 +31,7 @@ class _AsyncBase:
         self._base_url = f"https://{host}/v1/{project_id}/{name}"
 
         self.util = Util()
-        self.__ttl_attribute = BASE_TTL_ATTTRIBUTE
+        self.__ttl_attribute = BASE_TTL_ATTRIBUTE
 
         self._session = session or aiohttp.ClientSession(
             headers={

@@ -1,6 +1,5 @@
 import os
 import datetime
-from re import I
 import typing
 from urllib.parse import quote
 
@@ -8,7 +7,7 @@ from .service import _Service, JSON_MIME
 
 # timeout for Base service in seconds
 BASE_SERVICE_TIMEOUT = 300
-BASE_TTL_ATTTRIBUTE = "__expires"
+BASE_TTL_ATTRIBUTE = "__expires"
 
 
 class FetchResponse:
@@ -131,7 +130,7 @@ class _Base(_Service):
         if code == 201:
             return res
         elif code == 409:
-            raise Exception("Item with key '{4}' already exists".format(key))
+            raise Exception(f"Item with key '{key}' already exists")
 
     def put(
         self,
