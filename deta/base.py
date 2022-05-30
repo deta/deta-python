@@ -207,24 +207,6 @@ class _Base(_Service):
         _, res = self._request("/items", "PUT", {"items": _items}, content_type=JSON_MIME)
         return res
 
-    # def _fetch(
-    #     self,
-    #     query: typing.Union[dict, list] = None,
-    #     limit: int = None,
-    #     last: str = None,
-    # ):
-    #     """This is where actual fetch happens."""
-    #     payload = {
-    #         "limit": limit,
-    #         "last": last if not isinstance(last, bool) else None,
-    #     }
-
-    #     if query:
-    #         payload["query"] = query if isinstance(query, list) else [query]
-
-    #     code, res = self._request("/query", "POST", payload, content_type=JSON_MIME)
-    #     return code, res
-
     def fetch(
         self,
         query: typing.Union[dict, list] = None,
