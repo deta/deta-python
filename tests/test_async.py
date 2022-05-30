@@ -61,7 +61,7 @@ async def test_put(db):
     for input in ["Hello", 1, True, False, 3.14159265359]:
 
         resp = await db.put(input)
-        assert set(resp.keys()) == set(["key", "value"])
+        assert set(resp.keys()) == {"key", "value"}
 
 
 async def test_put_fail(db):
@@ -86,13 +86,13 @@ async def test_put_many_fail(db):
 
 async def test_put_many_fail_limit(db):
     with pytest.raises(Exception):
-        await db.put_many([i for i in range(26)])
+        await db.put_many(list(range(26)))
 
 
 async def test_insert(db):
     item = {"msg": "hello"}
     resp = await db.insert(item)
-    assert set(resp.keys()) == set(["key", "msg"])
+    assert set(resp.keys()) == {"key", "msg"}
 
 
 async def test_insert_fail(db, items):

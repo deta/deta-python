@@ -209,11 +209,11 @@ class TestBaseMethods(unittest.TestCase):
         self.assertEqual(self.db.put(item, "one"), resp)
         self.assertEqual(self.db.put(item, "one"), resp)
         self.assertEqual({"msg": "hello"}, item)
-        self.assertEqual(set(self.db.put("Hello").keys()), set(["key", "value"]))
-        self.assertEqual(set(self.db.put(1).keys()), set(["key", "value"]))
-        self.assertEqual(set(self.db.put(True).keys()), set(["key", "value"]))
-        self.assertEqual(set(self.db.put(False).keys()), set(["key", "value"]))
-        self.assertEqual(set(self.db.put(3.14159265359).keys()), set(["key", "value"]))
+        self.assertEqual(set(self.db.put("Hello").keys()), {"key", "value"})
+        self.assertEqual(set(self.db.put(1).keys()), {"key", "value"})
+        self.assertEqual(set(self.db.put(True).keys()), {"key", "value"})
+        self.assertEqual(set(self.db.put(False).keys()), {"key", "value"})
+        self.assertEqual(set(self.db.put(3.14159265359).keys()), {"key", "value"})
 
     @unittest.expectedFailure
     def test_put_fail(self):
@@ -231,11 +231,11 @@ class TestBaseMethods(unittest.TestCase):
 
     @unittest.expectedFailure
     def test_put_many_fail_limit(self):
-        self.db.put_many([i for i in range(26)])
+        self.db.put_many(list(range(26)))
 
     def test_insert(self):
         item = {"msg": "hello"}
-        self.assertEqual(set(self.db.insert(item).keys()), set(["key", "msg"]))
+        self.assertEqual(set(self.db.insert(item).keys()), {"key", "msg"})
         self.assertEqual({"msg": "hello"}, item)
 
     @unittest.expectedFailure
