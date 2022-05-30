@@ -1,7 +1,7 @@
-import http.client
 import os
 import json
 import socket
+import http.client
 import struct
 import typing
 import urllib.error
@@ -43,10 +43,10 @@ class _Service:
         path: str,
         method: str,
         data: typing.Union[str, bytes, dict] = None,
-        headers: dict = None,
+        headers: typing.Mapping = None,
         content_type: str = None,
         stream: bool = False,
-    ):
+    ) -> typing.Tuple[int, dict]:
         url = self.base_path + path
         headers = headers or {}
         headers["X-Api-Key"] = self.project_key
@@ -101,14 +101,14 @@ class _Service:
         self,
         method: str,
         url: str,
-        headers: dict = None,
+        headers: typing.Mapping[str, str] = None,
         body: typing.Union[str, bytes, dict] = None,
-        retry=2,  # try at least twice to regain a new connection
+        retry: int = 2,  # try at least twice to regain a new connection
     ):
-        reinitializeConnection = False
+        reinit_connection = False
         while retry > 0:
             try:
-                if not self.keep_alive or reinitializeConnection:
+                if not self.keep_alive or reinit_connection:
                     self.client = http.client.HTTPSConnection(host=self.host, timeout=self.timeout)
 
                 self.client.request(
@@ -120,5 +120,5 @@ class _Service:
                 res = self.client.getresponse()
                 return res
             except http.client.RemoteDisconnected:
-                reinitializeConnection = True
+                reinit_connection = True
                 retry -= 1

@@ -1,16 +1,19 @@
 import os
 
 
-def _get_project_key_id(project_key: str = None, project_id: str = None):
+def _get_project_key_id(
+    project_key: str = None,
+    project_id: str = None,
+):
     project_key = project_key or os.getenv("DETA_PROJECT_KEY")
 
     if not project_key:
-        raise ValueError("No project key defined")
+        raise ValueError("no project key defined")
 
     if not project_id:
         project_id = project_key.split("_")[0]
 
     if project_id == project_key:
-        raise ValueError("Bad project key provided")
+        raise ValueError("bad project key provided")
 
     return project_key, project_id

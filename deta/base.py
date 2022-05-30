@@ -7,26 +7,14 @@ from .service import _Service, JSON_MIME
 
 # timeout for Base service in seconds
 BASE_SERVICE_TIMEOUT = 300
-BASE_TTL_ATTTRIBUTE = "__expires"
+BASE_TTL_ATTRIBUTE = "__expires"
 
 
 class FetchResponse:
-    def __init__(self, count=0, last=None, items=[]):
-        self._count = count
-        self._last = last
-        self._items = items
-
-    @property
-    def count(self):
-        return self._count
-
-    @property
-    def last(self):
-        return self._last
-
-    @property
-    def items(self):
-        return self._items
+    def __init__(self, count: int = 0, last: str = None, items: list = None):
+        self.count = count
+        self.last = last
+        self.items = items if items is not None else []
 
     def __eq__(self, other):
         return self.count == other.count and self.last == other.last and self.items == other.items
@@ -37,27 +25,21 @@ class Util:
         pass
 
     class Increment:
-        def __init__(self, value=None):
-            self.val = value
-            if not value:
-                self.val = 1
+        def __init__(self, value=1):
+            self.value = value
 
     class Append:
         def __init__(self, value):
-            self.val = value
-            if not isinstance(value, list):
-                self.val = [value]
+            self.value = value if isinstance(value, list) else [value]
 
     class Prepend:
         def __init__(self, value):
-            self.val = value
-            if not isinstance(value, list):
-                self.val = [value]
+            self.value = value if isinstance(value, list) else [value]
 
     def trim(self):
         return self.Trim()
 
-    def increment(self, value: typing.Union[int, float] = None):
+    def increment(self, value: typing.Union[int, float] = 1):
         return self.Increment(value)
 
     def append(self, value: typing.Union[dict, list, str, int, float, bool]):
@@ -70,7 +52,7 @@ class Util:
 class _Base(_Service):
     def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
         if not name:
-            raise ValueError("Base name not provided or empty")
+            raise ValueError("parameter 'name' must be a non-empty string")
 
         host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
         super().__init__(
@@ -80,115 +62,168 @@ class _Base(_Service):
             name=name,
             timeout=BASE_SERVICE_TIMEOUT,
         )
-        self.__ttl_attribute = "__expires"
+        self._ttl_attribute = BASE_TTL_ATTRIBUTE
         self.util = Util()
 
-    def get(self, key: str):
-        if key == "":
-            raise ValueError("Key is empty")
+    def get(self, key: str) -> dict:
+        if not key:
+            raise ValueError("parameter 'key' must be a non-empty string")
 
-        # encode key
         key = quote(key, safe="")
         _, res = self._request(f"/items/{key}", "GET")
-        return res or None
+        return res
 
     def delete(self, key: str):
         """Delete an item from the database
-        key: the key of item to be deleted
-        """
-        if key == "":
-            raise ValueError("Key is empty")
 
-        # encode key
+        Args:
+            key: The key of item to be deleted.
+        """
+        if not key:
+            raise ValueError("parameter 'key' must be a non-empty string")
+
         key = quote(key, safe="")
         self._request(f"/items/{key}", "DELETE")
-        return None
 
+    @typing.overload
+    def insert(
+        self,
+        data: typing.Union[dict, list, str, int, bool],
+        key: str = None,
+    ) -> dict:
+        ...
+
+    @typing.overload
     def insert(
         self,
         data: typing.Union[dict, list, str, int, bool],
         key: str = None,
         *,
-        expire_in: int = None,
-        expire_at: typing.Union[int, float, datetime.datetime] = None,
-    ):
-        if not isinstance(data, dict):
-            data = {"value": data}
-        else:
-            data = data.copy()
+        expire_in: int,
+    ) -> dict:
+        ...
 
+    @typing.overload
+    def insert(
+        self,
+        data: typing.Union[dict, list, str, int, bool],
+        key: str = None,
+        *,
+        expire_at: typing.Union[int, float, datetime.datetime],
+    ) -> dict:
+        ...
+
+    def insert(self, data, key=None, *, expire_in=None, expire_at=None):
+        data = data.copy() if isinstance(data, dict) else {"value": data}
         if key:
             data["key"] = key
 
-        insert_ttl(data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at)
+        insert_ttl(data, self._ttl_attribute, expire_in=expire_in, expire_at=expire_at)
         code, res = self._request("/items", "POST", {"item": data}, content_type=JSON_MIME)
+
         if code == 201:
             return res
         elif code == 409:
-            raise Exception(f"Item with key '{key}' already exists")
+            raise ValueError(f"item with  key '{key}' already exists")
 
+    @typing.overload
+    def put(
+        self,
+        data: typing.Union[dict, list, str, int, bool],
+        key: str = None,
+    ) -> dict:
+        ...
+
+    @typing.overload
     def put(
         self,
         data: typing.Union[dict, list, str, int, bool],
         key: str = None,
         *,
-        expire_in: int = None,
-        expire_at: typing.Union[int, float, datetime.datetime] = None,
-    ):
-        """store (put) an item in the database. Overrides an item if key already exists.
-        `key` could be provided as function argument or a field in the data dict.
-        If `key` is not provided, the server will generate a random 12 chars key.
+        expire_in: int,
+    ) -> dict:
+        ...
+
+    @typing.overload
+    def put(
+        self,
+        data: typing.Union[dict, list, str, int, bool],
+        key: str = None,
+        *,
+        expire_at: typing.Union[int, float, datetime.datetime],
+    ) -> dict:
+        ...
+
+    def put(self, data, key=None, *, expire_in=None, expire_at=None):
+        """Store (put) an item in the database. Overrides an item if key already exists.
+        `key` could be provided as an argument or a field in the data dict.
+        If `key` is not provided, the server will generate a random 12-character key.
         """
-
-        if not isinstance(data, dict):
-            data = {"value": data}
-        else:
-            data = data.copy()
-
+        data = data.copy() if isinstance(data, dict) else {"value": data}
         if key:
             data["key"] = key
 
-        insert_ttl(data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at)
+        insert_ttl(data, self._ttl_attribute, expire_in=expire_in, expire_at=expire_at)
         code, res = self._request("/items", "PUT", {"items": [data]}, content_type=JSON_MIME)
         return res["processed"]["items"][0] if res and code == 207 else None
 
+    @typing.overload
     def put_many(
         self,
-        items: typing.List[typing.Union[dict, list, str, int, bool]],
+        items: typing.Sequence[typing.Union[dict, list, str, int, bool]],
+    ) -> dict:
+        ...
+
+    @typing.overload
+    def put_many(
+        self,
+        items: typing.Sequence[typing.Union[dict, list, str, int, bool]],
         *,
-        expire_in: int = None,
-        expire_at: typing.Union[int, float, datetime.datetime] = None,
-    ):
+        expire_in: int,
+    ) -> dict:
+        ...
+
+    @typing.overload
+    def put_many(
+        self,
+        items: typing.Sequence[typing.Union[dict, list, str, int, bool]],
+        *,
+        expire_at: typing.Union[int, float, datetime.datetime],
+    ) -> dict:
+        ...
+
+    def put_many(self, items, *, expire_in=None, expire_at=None):
         if len(items) > 25:
-            raise ValueError("Cannot put more than 25 items at a time")
+            raise ValueError("cannot put more than 25 items at a time")
+
         _items = []
-        for i in items:
-            data = i
-            if not isinstance(i, dict):
-                data = {"value": i}
-            insert_ttl(data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at)
+        for item in items:
+            data = item
+            if not isinstance(item, dict):
+                data = {"value": item}
+            insert_ttl(data, self._ttl_attribute, expire_in=expire_in, expire_at=expire_at)
             _items.append(data)
 
         _, res = self._request("/items", "PUT", {"items": _items}, content_type=JSON_MIME)
         return res
 
-    def _fetch(
-        self,
-        query: typing.Union[dict, list] = None,
-        buffer: int = None,
-        last: str = None,
-    ) -> typing.Optional[typing.Tuple[int, list]]:
-        """This is where actual fetch happens."""
-        payload = {
-            "limit": buffer,
-            "last": last if not isinstance(last, bool) else None,
-        }
+    # def _fetch(
+    #     self,
+    #     query: typing.Union[dict, list] = None,
+    #     limit: int = None,
+    #     last: str = None,
+    # ):
+    #     """This is where actual fetch happens."""
+    #     payload = {
+    #         "limit": limit,
+    #         "last": last if not isinstance(last, bool) else None,
+    #     }
 
-        if query:
-            payload["query"] = query if isinstance(query, list) else [query]
+    #     if query:
+    #         payload["query"] = query if isinstance(query, list) else [query]
 
-        code, res = self._request("/query", "POST", payload, content_type=JSON_MIME)
-        return code, res
+    #     code, res = self._request("/query", "POST", payload, content_type=JSON_MIME)
+    #     return code, res
 
     def fetch(
         self,
@@ -197,32 +232,56 @@ class _Base(_Service):
         limit: int = 1000,
         last: str = None,
     ):
+        """Fetch items from the database. `query` is an optional filter or list of filters.
+        Without a filter, it will return the whole db.
         """
-        fetch items from the database.
-            `query` is an optional filter or list of filters. Without filter, it will return the whole db.
-        """
-        _, res = self._fetch(query, limit, last)
+        payload = {
+            "limit": limit,
+            "last": last if not isinstance(last, bool) else None,
+        }
 
+        if query:
+            payload["query"] = query if isinstance(query, list) else [query]
+
+        _, res = self._request("/query", "POST", payload, content_type=JSON_MIME)
         paging = res.get("paging")
-
         return FetchResponse(paging.get("size"), paging.get("last"), res.get("items"))
 
+    @typing.overload
     def update(
         self,
-        updates: dict,
+        updates: typing.Mapping,
+        key: str,
+    ):
+        ...
+
+    @typing.overload
+    def update(
+        self,
+        updates: typing.Mapping,
         key: str,
         *,
-        expire_in: int = None,
-        expire_at: typing.Union[int, float, datetime.datetime] = None,
+        expire_in: int,
     ):
-        """
-        update an item in the database
-        `updates` specifies the attribute names and values to update,add or remove
-        `key` is the kye of the item to be updated
-        """
+        ...
 
-        if key == "":
-            raise ValueError("Key is empty")
+    @typing.overload
+    def update(
+        self,
+        updates: typing.Mapping,
+        key: str,
+        *,
+        expire_at: typing.Union[int, float, datetime.datetime],
+    ):
+        ...
+
+    def update(self, updates, key, *, expire_in=None, expire_at=None):
+        """Update an item in the database.
+        `updates` specifies the attribute names and values to update, add or remove.
+        `key` is the key of the item to be updated.
+        """
+        if not key:
+            raise ValueError("parameter 'key' must be a non-empty string")
 
         payload = {
             "set": {},
@@ -231,37 +290,37 @@ class _Base(_Service):
             "prepend": {},
             "delete": [],
         }
+
         if updates:
             for attr, value in updates.items():
                 if isinstance(value, Util.Trim):
                     payload["delete"].append(attr)
                 elif isinstance(value, Util.Increment):
-                    payload["increment"][attr] = value.val
+                    payload["increment"][attr] = value.value
                 elif isinstance(value, Util.Append):
-                    payload["append"][attr] = value.val
+                    payload["append"][attr] = value.value
                 elif isinstance(value, Util.Prepend):
-                    payload["prepend"][attr] = value.val
+                    payload["prepend"][attr] = value.value
                 else:
                     payload["set"][attr] = value
 
         insert_ttl(
             payload["set"],
-            self.__ttl_attribute,
+            self._ttl_attribute,
             expire_in=expire_in,
             expire_at=expire_at,
         )
 
         encoded_key = quote(key, safe="")
         code, _ = self._request(f"/items/{encoded_key}", "PATCH", payload, content_type=JSON_MIME)
-        if code == 200:
-            return None
-        elif code == 404:
-            raise Exception(f"Key '{key}' not found")
+        if code == 404:
+            raise ValueError(f"key '{key}' not found")
 
 
 def insert_ttl(item, ttl_attribute, expire_in=None, expire_at=None):
     if expire_in and expire_at:
-        raise ValueError("Both expire_in and expire_at provided")
+        raise ValueError("both 'expire_in' and 'expire_at' provided")
+
     if not expire_in and not expire_at:
         return
 
@@ -270,8 +329,7 @@ def insert_ttl(item, ttl_attribute, expire_in=None, expire_at=None):
 
     if isinstance(expire_at, datetime.datetime):
         expire_at = expire_at.replace(microsecond=0).timestamp()
-
-    if not isinstance(expire_at, (int, float)):
-        raise TypeError("expire_at should one one of int, float or datetime")
+    elif not isinstance(expire_at, (int, float)):
+        raise TypeError("'expire_at' must be of type 'int', 'float' or 'datetime'")
 
     item[ttl_attribute] = int(expire_at)
