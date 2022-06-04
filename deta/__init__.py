@@ -23,7 +23,6 @@ except ImportError:
 __version__ = "1.1.0"
 
 
-
 def Base(name: str):
     project_key, project_id = _get_project_key_id()
     return _Base(name, project_key, project_id)
@@ -45,7 +44,7 @@ class Deta:
 
     def AsyncBase(self, name: str, host: str = None):
         from ._async.client import _AsyncBase
-        return _AsyncBase(name, self.project_key, self.project_id, host)
+        return _AsyncBase(name, self.project_key, self.project_id, host=host)
 
     def Drive(self, name: str, host: str = None):
         return _Drive(
@@ -55,7 +54,8 @@ class Deta:
             host=host,
         )
 
-    def send_email(self, to, subject, message, charset="UTF-8"):
+    @staticmethod
+    def send_email(to, subject, message, charset="UTF-8"):
         return send_email(to, subject, message, charset)
 
 

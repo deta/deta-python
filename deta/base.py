@@ -11,10 +11,10 @@ BASE_TTL_ATTRIBUTE = "__expires"
 
 
 class FetchResponse:
-    def __init__(self, count=0, last=None, items=[]):
+    def __init__(self, count=0, last=None, items: list = None):
         self._count = count
         self._last = last
-        self._items = items
+        self._items = items or []
 
     @property
     def count(self):

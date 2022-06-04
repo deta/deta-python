@@ -65,7 +65,8 @@ class _Drive(_Service):
             keep_alive=False,
         )
 
-    def _quote(self, param: str):
+    @staticmethod
+    def _quote(param: str):
         return quote_plus(param)
 
     def get(self, name: str):
@@ -109,7 +110,7 @@ class _Drive(_Service):
         """List file names from drive.
         `limit` is the limit of number of file names to get, defaults to 1000.
         `prefix` is the prefix  of file names.
-        `last` is the last name seen in the a previous paginated response.
+        `last` is the last name seen in the previous paginated response.
         Returns a dict with 'paging' and 'names'.
         """
         url = f"/files?limit={limit}"
@@ -145,9 +146,8 @@ class _Drive(_Service):
             content_type=content_type,
         )
 
-    def _get_content_stream(
-        self, data: typing.Union[str, bytes, TextIOBase, BufferedIOBase, RawIOBase]
-    ):
+    @staticmethod
+    def _get_content_stream(data: typing.Union[str, bytes, TextIOBase, BufferedIOBase, RawIOBase]):
         if isinstance(data, str):
             return StringIO(data)
         elif isinstance(data, bytes):
@@ -181,7 +181,7 @@ class _Drive(_Service):
         # upload chunks
         while True:
             chunk = content_stream.read(UPLOAD_CHUNK_SIZE)
-            ## eof stop the loop
+            # eof stop the loop
             if not chunk:
                 self._finish_upload(name, upload_id)
                 content_stream.close()
