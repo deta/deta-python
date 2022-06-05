@@ -88,7 +88,7 @@ class _AsyncBase:
         if key:
             data["key"] = key
 
-        insert_ttl(data, self._ttl_attribute, expire_in=expire_in, expire_at=expire_at)
+        insert_ttl(data, self._ttl_attribute, expire_in, expire_at)
         async with self._session.post(f"{self._base_url}/items", json={"item": data}) as resp:
             return await resp.json()
 
@@ -126,7 +126,7 @@ class _AsyncBase:
         if key:
             data["key"] = key
 
-        insert_ttl(data, self._ttl_attribute, expire_in=expire_in, expire_at=expire_at)
+        insert_ttl(data, self._ttl_attribute, expire_in, expire_at)
         async with self._session.put(f"{self._base_url}/items", json={"items": [data]}) as resp:
             if resp.status != 207:
                 return None
@@ -167,7 +167,7 @@ class _AsyncBase:
             data = i
             if not isinstance(i, dict):
                 data = {"value": i}
-            insert_ttl(data, self._ttl_attribute, expire_in=expire_in, expire_at=expire_at)
+            insert_ttl(data, self._ttl_attribute, expire_in, expire_at)
             _items.append(data)
 
         async with self._session.put(f"{self._base_url}/items", json={"items": _items}) as resp:
@@ -249,12 +249,7 @@ class _AsyncBase:
         if not payload:
             raise ValueError("must provide at least one update action")
 
-        insert_ttl(
-            payload["set"],
-            self._ttl_attribute,
-            expire_in=expire_in,
-            expire_at=expire_at,
-        )
+        insert_ttl(payload["set"], self._ttl_attribute, expire_in, expire_at)
 
         encoded_key = quote(key, safe="")
         await self._session.patch(f"{self._base_url}/items/{encoded_key}", json=payload)

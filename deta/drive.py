@@ -45,25 +45,12 @@ class DriveStreamingBody:
 
 
 class _Drive(_Service):
-    def __init__(
-        self,
-        name: str,
-        project_key: str,
-        project_id: str,
-        host: str = None,
-    ):
+    def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
         if not name:
             raise ValueError("parameter 'name' must be a non-empty string")
 
         host = host or os.getenv("DETA_DRIVE_HOST") or "drive.deta.sh"
-        super().__init__(
-            project_key=project_key,
-            project_id=project_id,
-            host=host,
-            name=name,
-            timeout=DRIVE_SERVICE_TIMEOUT,
-            keep_alive=False,
-        )
+        super().__init__(project_key, project_id, host, name, DRIVE_SERVICE_TIMEOUT, False)
 
     def _quote(self, param: str) -> str:
         return quote_plus(param)
@@ -168,12 +155,7 @@ class _Drive(_Service):
                 content_stream.close()
                 raise e
 
-    def list(
-        self,
-        limit: int = 1000,
-        prefix: str = None,
-        last: str = None,
-    ) -> dict:
+    def list(self, limit: int = 1000, prefix: str = None, last: str = None) -> dict:
         """List file names from drive.
         `limit` is the number of file names to get, defaults to 1000.
         `prefix` is the prefix of file names.

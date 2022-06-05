@@ -55,13 +55,7 @@ class _Base(_Service):
             raise ValueError("parameter 'name' must be a non-empty string")
 
         host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
-        super().__init__(
-            project_key=project_key,
-            project_id=project_id,
-            host=host,
-            name=name,
-            timeout=BASE_SERVICE_TIMEOUT,
-        )
+        super().__init__(project_key, project_id, host, name, BASE_SERVICE_TIMEOUT)
         self._ttl_attribute = BASE_TTL_ATTRIBUTE
         self.util = Util()
 
@@ -118,7 +112,7 @@ class _Base(_Service):
         if key:
             data["key"] = key
 
-        insert_ttl(data, self._ttl_attribute, expire_in=expire_in, expire_at=expire_at)
+        insert_ttl(data, self._ttl_attribute, expire_in, expire_at)
         code, res = self._request("/items", "POST", {"item": data}, content_type=JSON_MIME)
 
         if code == 201:
@@ -163,7 +157,7 @@ class _Base(_Service):
         if key:
             data["key"] = key
 
-        insert_ttl(data, self._ttl_attribute, expire_in=expire_in, expire_at=expire_at)
+        insert_ttl(data, self._ttl_attribute, expire_in, expire_at)
         code, res = self._request("/items", "PUT", {"items": [data]}, content_type=JSON_MIME)
         return res["processed"]["items"][0] if res and code == 207 else None
 
@@ -201,19 +195,13 @@ class _Base(_Service):
             data = item
             if not isinstance(item, dict):
                 data = {"value": item}
-            insert_ttl(data, self._ttl_attribute, expire_in=expire_in, expire_at=expire_at)
+            insert_ttl(data, self._ttl_attribute, expire_in, expire_at)
             _items.append(data)
 
         _, res = self._request("/items", "PUT", {"items": _items}, content_type=JSON_MIME)
         return res
 
-    def fetch(
-        self,
-        query: typing.Union[dict, list] = None,
-        *,
-        limit: int = 1000,
-        last: str = None,
-    ):
+    def fetch(self, query: typing.Union[dict, list] = None, *, limit: int = 1000, last: str = None):
         """Fetch items from the database. `query` is an optional filter or list of filters.
         Without a filter, it will return the whole db.
         """
@@ -286,12 +274,7 @@ class _Base(_Service):
                 else:
                     payload["set"][attr] = value
 
-        insert_ttl(
-            payload["set"],
-            self._ttl_attribute,
-            expire_in=expire_in,
-            expire_at=expire_at,
-        )
+        insert_ttl(payload["set"], self._ttl_attribute, expire_in, expire_at)
 
         encoded_key = quote(key, safe="")
         code, _ = self._request(f"/items/{encoded_key}", "PATCH", payload, content_type=JSON_MIME)
