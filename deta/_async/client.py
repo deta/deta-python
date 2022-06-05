@@ -6,16 +6,14 @@ from urllib.parse import quote
 try:
     import aiohttp
 except ImportError:
-    has_aiohttp = False
-else:
-    has_aiohttp = True
+    aiohttp = None
 
 from deta.base import FetchResponse, Util, insert_ttl, BASE_TTL_ATTRIBUTE
 
 
 class _AsyncBase:
     def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
-        if not has_aiohttp:
+        if aiohttp is None:
             raise RuntimeError("aiohttp library is required for async support")
 
         if not name:
@@ -163,10 +161,10 @@ class _AsyncBase:
             raise ValueError("cannot put more than 25 items at a time")
 
         _items = []
-        for i in items:
-            data = i
-            if not isinstance(i, dict):
-                data = {"value": i}
+        for item in items:
+            data = item
+            if not isinstance(item, dict):
+                data = {"value": item}
             insert_ttl(data, self._ttl_attribute, expire_in, expire_at)
             _items.append(data)
 
