@@ -1,32 +1,31 @@
 import os
 import datetime
-from re import I
-import typing
 from urllib.parse import quote
+from typing import List, Dict, Any, Union, Tuple, Optional
 
 from .service import _Service, JSON_MIME
 
 # timeout for Base service in seconds
 BASE_SERVICE_TIMEOUT = 300
-BASE_TTL_ATTTRIBUTE = "__expires"
+BASE_TTL_ATTRIBUTE = "__expires"
 
 
 class FetchResponse:
-    def __init__(self, count=0, last=None, items=[]):
-        self._count = count
+    def __init__(self, count=0, last=None, items: list = None):
         self._last = last
-        self._items = items
+        self._count = count
+        self._items = items or []
 
     @property
-    def count(self):
+    def count(self) -> int:
         return self._count
 
     @property
-    def last(self):
+    def last(self) -> Optional[str]:
         return self._last
 
     @property
-    def items(self):
+    def items(self) -> list:
         return self._items
 
     def __eq__(self, other):
@@ -35,6 +34,12 @@ class FetchResponse:
             and self.last == other.last
             and self.items == other.items
         )
+
+    def __iter__(self):
+        return iter(self.items)
+
+    def __len__(self):
+        return len(self.items)
 
 
 class Util:
@@ -62,13 +67,13 @@ class Util:
     def trim(self):
         return self.Trim()
 
-    def increment(self, value: typing.Union[int, float] = None):
+    def increment(self, value: Union[int, float] = None):
         return self.Increment(value)
 
-    def append(self, value: typing.Union[dict, list, str, int, float, bool]):
+    def append(self, value: Union[dict, list, str, int, float, bool]):
         return self.Append(value)
 
-    def prepend(self, value: typing.Union[dict, list, str, int, float, bool]):
+    def prepend(self, value: Union[dict, list, str, int, float, bool]):
         return self.Prepend(value)
 
 
@@ -87,7 +92,7 @@ class _Base(_Service):
         self.__ttl_attribute = "__expires"
         self.util = Util()
 
-    def get(self, key: str):
+    def get(self, key: str) -> Dict[str, Any]:
         if key == "":
             raise ValueError("Key is empty")
 
@@ -95,6 +100,14 @@ class _Base(_Service):
         key = quote(key, safe="")
         _, res = self._request("/items/{}".format(key), "GET")
         return res or None
+    
+    def all(self) -> List[Dict[str, Any]]:
+        res = self.fetch()
+        items = res.items
+        while res.last:
+            res = self.fetch(last=res.last)
+            items += res.items
+        return items
 
     def delete(self, key: str):
         """Delete an item from the database
@@ -110,11 +123,11 @@ class _Base(_Service):
 
     def insert(
         self,
-        data: typing.Union[dict, list, str, int, bool],
+        data: Union[dict, list, str, int, bool],
         key: str = None,
         *,
         expire_in: int = None,
-        expire_at: typing.Union[int, float, datetime.datetime] = None,
+        expire_at: Union[int, float, datetime.datetime] = None,
     ):
         if not isinstance(data, dict):
             data = {"value": data}
@@ -131,15 +144,15 @@ class _Base(_Service):
         if code == 201:
             return res
         elif code == 409:
-            raise Exception("Item with key '{4}' already exists".format(key))
+            raise Exception(f"Item with key '{key}' already exists")
 
     def put(
         self,
-        data: typing.Union[dict, list, str, int, bool],
+        data: Union[dict, list, str, int, bool],
         key: str = None,
         *,
         expire_in: int = None,
-        expire_at: typing.Union[int, float, datetime.datetime] = None,
+        expire_at: Union[int, float, datetime.datetime] = None,
     ):
         """store (put) an item in the database. Overrides an item if key already exists.
         `key` could be provided as function argument or a field in the data dict.
@@ -162,10 +175,10 @@ class _Base(_Service):
 
     def put_many(
         self,
-        items: typing.List[typing.Union[dict, list, str, int, bool]],
+        items: List[Union[dict, list, str, int, bool]],
         *,
         expire_in: int = None,
-        expire_at: typing.Union[int, float, datetime.datetime] = None,
+        expire_at: Union[int, float, datetime.datetime] = None,
     ):
         assert len(items) <= 25, "We can't put more than 25 items at a time."
         _items = []
@@ -185,10 +198,10 @@ class _Base(_Service):
 
     def _fetch(
         self,
-        query: typing.Union[dict, list] = None,
+        query: Union[dict, list] = None,
         buffer: int = None,
         last: str = None,
-    ) -> typing.Optional[typing.Tuple[int, list]]:
+    ) -> Optional[Tuple[int, list]]:
         """This is where actual fetch happens."""
         payload = {
             "limit": buffer,
@@ -203,7 +216,7 @@ class _Base(_Service):
 
     def fetch(
         self,
-        query: typing.Union[dict, list] = None,
+        query: Union[dict, list] = None,
         *,
         limit: int = 1000,
         last: str = None,
@@ -224,7 +237,7 @@ class _Base(_Service):
         key: str,
         *,
         expire_in: int = None,
-        expire_at: typing.Union[int, float, datetime.datetime] = None,
+        expire_at: Union[int, float, datetime.datetime] = None,
     ):
         """
         update an item in the database
