@@ -6,14 +6,24 @@ from urllib.parse import quote
 try:
     import aiohttp
 except ImportError:
-    aiohttp = None
+    has_aiohttp = False
+else:
+    has_aiohttp = True
 
 from deta.base import FetchResponse, Util, insert_ttl, BASE_TTL_ATTRIBUTE
 
 
 class _AsyncBase:
-    def __init__(self, name: str, project_key: str, project_id: str, host: Optional[str] = None):
-        if aiohttp is None:
+    def __init__(
+        self,
+        name: str,
+        project_key: str,
+        project_id: str,
+        *,
+        host: Optional[str] = None,
+        session: Optional[aiohttp.ClientSession] = None,
+    ):
+        if not has_aiohttp:
             raise RuntimeError("aiohttp library is required for async support")
 
         if not name:
@@ -25,7 +35,7 @@ class _AsyncBase:
         self.util = Util()
         self._ttl_attribute = BASE_TTL_ATTRIBUTE
 
-        self._session = aiohttp.ClientSession(
+        self._session = session or aiohttp.ClientSession(
             headers={
                 "Content-type": "application/json",
                 "X-API-Key": project_key,
