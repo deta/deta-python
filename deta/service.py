@@ -3,8 +3,8 @@ import json
 import socket
 import http.client
 import struct
-import typing
 import urllib.error
+from typing import Mapping, MutableMapping, Optional, Tuple, Union
 
 JSON_MIME = "application/json"
 
@@ -42,11 +42,11 @@ class _Service:
         self,
         path: str,
         method: str,
-        data: typing.Union[str, bytes, dict] = None,
-        headers: typing.Mapping = None,
-        content_type: str = None,
+        data: Optional[Union[str, bytes, dict]] = None,
+        headers: Optional[MutableMapping[str, str]] = None,
+        content_type: Optional[str] = None,
         stream: bool = False,
-    ) -> typing.Tuple[int, dict]:
+    ) -> Tuple[int, Optional[dict]]:
         url = self.base_path + path
         headers = headers or {}
         headers["X-Api-Key"] = self.project_key
@@ -101,10 +101,11 @@ class _Service:
         self,
         method: str,
         url: str,
-        headers: typing.Mapping[str, str] = None,
-        body: typing.Union[str, bytes, dict] = None,
+        headers: Optional[Mapping[str, str]] = None,
+        body: Optional[Union[str, bytes, dict]] = None,
         retry: int = 2,  # try at least twice to regain a new connection
     ):
+        headers = headers if headers is not None else {}
         reinit_connection = False
         while retry > 0:
             try:

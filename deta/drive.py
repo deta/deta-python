@@ -1,6 +1,6 @@
 import os
-import typing
 from io import BufferedIOBase, TextIOBase, RawIOBase, StringIO, BytesIO
+from typing import Any, Dict, Iterator, Optional, Sequence, Union, overload
 from urllib.parse import quote_plus
 
 from .service import JSON_MIME, _Service
@@ -20,17 +20,17 @@ class DriveStreamingBody:
     def closed(self):
         return self._stream.closed
 
-    def read(self, size: int = None) -> bytes:
+    def read(self, size: Optional[int] = None) -> bytes:
         return self._stream.read(size)
 
-    def iter_chunks(self, chunk_size: int = 1024) -> typing.Iterator[bytes]:
+    def iter_chunks(self, chunk_size: int = 1024) -> Iterator[bytes]:
         while True:
             chunk = self._stream.read(chunk_size)
             if not chunk:
                 break
             yield chunk
 
-    def iter_lines(self, chunk_size: int = 1024) -> typing.Iterator[bytes]:
+    def iter_lines(self, chunk_size: int = 1024) -> Iterator[bytes]:
         while True:
             chunk = self._stream.readline(chunk_size)
             if not chunk:
@@ -45,7 +45,7 @@ class DriveStreamingBody:
 
 
 class _Drive(_Service):
-    def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
+    def __init__(self, name: str, project_key: str, project_id: str, host: Optional[str] = None):
         if not name:
             raise ValueError("parameter 'name' must be a non-empty string")
 
@@ -82,7 +82,7 @@ class _Drive(_Service):
 
         return name
 
-    def delete_many(self, names: typing.Sequence[str]) -> dict:
+    def delete_many(self, names: Sequence[str]) -> dict:
         """Delete many files from drive in single request.
         `names` are the names of the files to be deleted.
         Returns a dict with 'deleted' and 'failed' files.
@@ -96,17 +96,17 @@ class _Drive(_Service):
         _, res = self._request("/files", "DELETE", {"names": names}, content_type=JSON_MIME)
         return res
 
-    @typing.overload
+    @overload
     def put(
         self,
         name: str,
-        data: typing.Union[str, bytes, TextIOBase, BufferedIOBase, RawIOBase],
+        data: Union[str, bytes, TextIOBase, BufferedIOBase, RawIOBase],
         *,
         content_type: str,
     ) -> str:
         ...
 
-    @typing.overload
+    @overload
     def put(
         self,
         name: str,
@@ -132,7 +132,10 @@ class _Drive(_Service):
 
         # start upload
         upload_id = self._start_upload(name)
-        content_stream = open(path, "rb") if path else self._get_content_stream(data)
+        if data:
+            content_stream = self._get_content_stream(data)
+        else:
+            content_stream = open(path, "rb")
         part = 1
 
         # upload chunks
@@ -155,7 +158,7 @@ class _Drive(_Service):
                 content_stream.close()
                 raise e
 
-    def list(self, limit: int = 1000, prefix: str = None, last: str = None) -> dict:
+    def list(self, limit: int = 1000, prefix: Optional[str] = None, last: Optional[str] = None) -> Dict[str, Any]:
         """List file names from drive.
         `limit` is the number of file names to get, defaults to 1000.
         `prefix` is the prefix of file names.
@@ -188,7 +191,7 @@ class _Drive(_Service):
         chunk: bytes,
         upload_id: str,
         part: int,
-        content_type: str = None,
+        content_type: Optional[str] = None,
     ):
         self._request(
             f"/uploads/{upload_id}/parts?name={self._quote(name)}&part={part}",
@@ -199,7 +202,7 @@ class _Drive(_Service):
 
     def _get_content_stream(
         self,
-        data: typing.Union[str, bytes, TextIOBase, BufferedIOBase, RawIOBase],
+        data: Union[str, bytes, TextIOBase, BufferedIOBase, RawIOBase],
     ):
         if isinstance(data, str):
             return StringIO(data)

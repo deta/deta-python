@@ -1,6 +1,6 @@
 import os
 import datetime
-import typing
+from typing import Mapping, Optional, Sequence, Union, overload
 from urllib.parse import quote
 
 try:
@@ -12,7 +12,7 @@ from deta.base import FetchResponse, Util, insert_ttl, BASE_TTL_ATTRIBUTE
 
 
 class _AsyncBase:
-    def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
+    def __init__(self, name: str, project_key: str, project_id: str, host: Optional[str] = None):
         if aiohttp is None:
             raise RuntimeError("aiohttp library is required for async support")
 
@@ -36,12 +36,12 @@ class _AsyncBase:
     async def close(self):
         await self._session.close()
 
-    async def get(self, key: str) -> dict:
+    async def get(self, key: str) -> Optional[dict]:
         key = quote(key, safe="")
         try:
             async with self._session.get(f"{self._base_url}/items/{key}") as resp:
                 return await resp.json()
-        except aiohttp.ClientResponseError as e:
+        except aiohttp.ClientResponseError as e:  # type: ignore
             if e.status == 404:
                 return
             else:
@@ -52,31 +52,31 @@ class _AsyncBase:
         async with self._session.delete(f"{self._base_url}/items/{key}"):
             return
 
-    @typing.overload
+    @overload
     async def insert(
         self,
-        data: typing.Union[dict, list, str, int, bool],
-        key: str = None,
+        data: Union[dict, list, str, int, bool],
+        key: Optional[str] = None,
     ) -> dict:
         ...
 
-    @typing.overload
+    @overload
     async def insert(
         self,
-        data: typing.Union[dict, list, str, int, bool],
-        key: str = None,
+        data: Union[dict, list, str, int, bool],
+        key: Optional[str] = None,
         *,
         expire_in: int,
     ) -> dict:
         ...
 
-    @typing.overload
+    @overload
     async def insert(
         self,
-        data: typing.Union[dict, list, str, int, bool],
-        key: str = None,
+        data: Union[dict, list, str, int, bool],
+        key: Optional[str] = None,
         *,
-        expire_at: typing.Union[int, float, datetime.datetime],
+        expire_at: Union[int, float, datetime.datetime],
     ) -> dict:
         ...
 
@@ -90,31 +90,31 @@ class _AsyncBase:
         async with self._session.post(f"{self._base_url}/items", json={"item": data}) as resp:
             return await resp.json()
 
-    @typing.overload
+    @overload
     async def put(
         self,
-        data: typing.Union[dict, list, str, int, bool],
-        key: str = None,
+        data: Union[dict, list, str, int, bool],
+        key: Optional[str] = None,
     ) -> dict:
         ...
 
-    @typing.overload
+    @overload
     async def put(
         self,
-        data: typing.Union[dict, list, str, int, bool],
-        key: str = None,
+        data: Union[dict, list, str, int, bool],
+        key: Optional[str] = None,
         *,
         expire_in: int,
     ) -> dict:
         ...
 
-    @typing.overload
+    @overload
     async def put(
         self,
-        data: typing.Union[dict, list, str, int, bool],
-        key: str = None,
+        data: Union[dict, list, str, int, bool],
+        key: Optional[str] = None,
         *,
-        expire_at: typing.Union[int, float, datetime.datetime],
+        expire_at: Union[int, float, datetime.datetime],
     ) -> dict:
         ...
 
@@ -131,28 +131,28 @@ class _AsyncBase:
             resp_json = await resp.json()
             return resp_json["processed"]["items"][0]
 
-    @typing.overload
+    @overload
     async def put_many(
         self,
-        items: typing.Sequence[typing.Union[dict, list, str, int, bool]],
+        items: Sequence[Union[dict, list, str, int, bool]],
     ) -> dict:
         ...
 
-    @typing.overload
+    @overload
     async def put_many(
         self,
-        items: typing.Sequence[typing.Union[dict, list, str, int, bool]],
+        items: Sequence[Union[dict, list, str, int, bool]],
         *,
         expire_in: int,
     ) -> dict:
         ...
 
-    @typing.overload
+    @overload
     async def put_many(
         self,
-        items: typing.Sequence[typing.Union[dict, list, str, int, bool]],
+        items: Sequence[Union[dict, list, str, int, bool]],
         *,
-        expire_at: typing.Union[int, float, datetime.datetime],
+        expire_at: Union[int, float, datetime.datetime],
     ) -> dict:
         ...
 
@@ -173,10 +173,10 @@ class _AsyncBase:
 
     async def fetch(
         self,
-        query: typing.Union[dict, list] = None,
+        query: Optional[Union[Mapping, Sequence[Mapping]]] = None,
         *,
         limit: int = 1000,
-        last: str = None,
+        last: Optional[str] = None,
     ):
         payload = {
             "limit": limit,
@@ -184,38 +184,38 @@ class _AsyncBase:
         }
 
         if query:
-            payload["query"] = query if isinstance(query, list) else [query]
+            payload["query"] = query if isinstance(query, Sequence) else [query]
 
         async with self._session.post(f"{self._base_url}/query", json=payload) as resp:
             resp_json = await resp.json()
             paging = resp_json.get("paging")
             return FetchResponse(paging.get("size"), paging.get("last"), resp_json.get("items"))
 
-    @typing.overload
+    @overload
     async def update(
         self,
-        updates: typing.Mapping,
+        updates: Mapping,
         key: str,
     ):
         ...
 
-    @typing.overload
+    @overload
     async def update(
         self,
-        updates: typing.Mapping,
+        updates: Mapping,
         key: str,
         *,
         expire_in: int,
     ):
         ...
 
-    @typing.overload
+    @overload
     async def update(
         self,
-        updates: typing.Mapping,
+        updates: Mapping,
         key: str,
         *,
-        expire_at: typing.Union[int, float, datetime.datetime],
+        expire_at: Union[int, float, datetime.datetime],
     ):
         ...
 

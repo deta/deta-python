@@ -1,7 +1,8 @@
 import os
+from typing import Optional
 
 
-def _get_project_key_id(project_key: str = None, project_id: str = None):
+def _get_project_key_id(project_key: Optional[str] = None, project_id: Optional[str] = None):
     project_key = project_key or os.getenv("DETA_PROJECT_KEY")
 
     if not project_key:

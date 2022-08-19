@@ -1,6 +1,6 @@
 import os
 import datetime
-import typing
+from typing import Any, Dict, Mapping, Optional, Sequence, Union, overload
 from urllib.parse import quote
 
 from .service import _Service, JSON_MIME
@@ -11,13 +11,19 @@ BASE_TTL_ATTRIBUTE = "__expires"
 
 
 class FetchResponse:
-    def __init__(self, count: int = 0, last: str = None, items: list = None):
+    def __init__(self, count: int = 0, last: Optional[str] = None, items: Optional[list] = None):
         self.count = count
         self.last = last
         self.items = items if items is not None else []
 
-    def __eq__(self, other):
+    def __eq__(self, other: "FetchResponse"):
         return self.count == other.count and self.last == other.last and self.items == other.items
+
+    def __iter__(self):
+        return iter(self.items)
+
+    def __len__(self):
+        return len(self.items)
 
 
 class Util:
@@ -25,32 +31,32 @@ class Util:
         pass
 
     class Increment:
-        def __init__(self, value=1):
+        def __init__(self, value: Union[int, float] = 1):
             self.value = value
 
     class Append:
-        def __init__(self, value):
+        def __init__(self, value: Union[dict, list, str, int, float, bool]):
             self.value = value if isinstance(value, list) else [value]
 
     class Prepend:
-        def __init__(self, value):
+        def __init__(self, value: Union[dict, list, str, int, float, bool]):
             self.value = value if isinstance(value, list) else [value]
 
     def trim(self):
         return self.Trim()
 
-    def increment(self, value: typing.Union[int, float] = 1):
+    def increment(self, value: Union[int, float] = 1):
         return self.Increment(value)
 
-    def append(self, value: typing.Union[dict, list, str, int, float, bool]):
+    def append(self, value: Union[dict, list, str, int, float, bool]):
         return self.Append(value)
 
-    def prepend(self, value: typing.Union[dict, list, str, int, float, bool]):
+    def prepend(self, value: Union[dict, list, str, int, float, bool]):
         return self.Prepend(value)
 
 
 class _Base(_Service):
-    def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
+    def __init__(self, name: str, project_key: str, project_id: str, host: Optional[str] = None):
         if not name:
             raise ValueError("parameter 'name' must be a non-empty string")
 
@@ -59,7 +65,7 @@ class _Base(_Service):
         self._ttl_attribute = BASE_TTL_ATTRIBUTE
         self.util = Util()
 
-    def get(self, key: str) -> dict:
+    def get(self, key: str) -> Dict[str, Any]:
         if not key:
             raise ValueError("parameter 'key' must be a non-empty string")
 
@@ -79,31 +85,31 @@ class _Base(_Service):
         key = quote(key, safe="")
         self._request(f"/items/{key}", "DELETE")
 
-    @typing.overload
+    @overload
     def insert(
         self,
-        data: typing.Union[dict, list, str, int, bool],
-        key: str = None,
+        data: Union[dict, list, str, int, bool],
+        key: Optional[str] = None,
     ) -> dict:
         ...
 
-    @typing.overload
+    @overload
     def insert(
         self,
-        data: typing.Union[dict, list, str, int, bool],
-        key: str = None,
+        data: Union[dict, list, str, int, bool],
+        key: Optional[str] = None,
         *,
         expire_in: int,
     ) -> dict:
         ...
 
-    @typing.overload
+    @overload
     def insert(
         self,
-        data: typing.Union[dict, list, str, int, bool],
-        key: str = None,
+        data: Union[dict, list, str, int, bool],
+        key: Optional[str] = None,
         *,
-        expire_at: typing.Union[int, float, datetime.datetime],
+        expire_at: Union[int, float, datetime.datetime],
     ) -> dict:
         ...
 
@@ -120,31 +126,31 @@ class _Base(_Service):
         elif code == 409:
             raise ValueError(f"item with  key '{key}' already exists")
 
-    @typing.overload
+    @overload
     def put(
         self,
-        data: typing.Union[dict, list, str, int, bool],
-        key: str = None,
+        data: Union[dict, list, str, int, bool],
+        key: Optional[str] = None,
     ) -> dict:
         ...
 
-    @typing.overload
+    @overload
     def put(
         self,
-        data: typing.Union[dict, list, str, int, bool],
-        key: str = None,
+        data: Union[dict, list, str, int, bool],
+        key: Optional[str] = None,
         *,
         expire_in: int,
     ) -> dict:
         ...
 
-    @typing.overload
+    @overload
     def put(
         self,
-        data: typing.Union[dict, list, str, int, bool],
-        key: str = None,
+        data: Union[dict, list, str, int, bool],
+        key: Optional[str] = None,
         *,
-        expire_at: typing.Union[int, float, datetime.datetime],
+        expire_at: Union[int, float, datetime.datetime],
     ) -> dict:
         ...
 
@@ -161,28 +167,28 @@ class _Base(_Service):
         code, res = self._request("/items", "PUT", {"items": [data]}, content_type=JSON_MIME)
         return res["processed"]["items"][0] if res and code == 207 else None
 
-    @typing.overload
+    @overload
     def put_many(
         self,
-        items: typing.Sequence[typing.Union[dict, list, str, int, bool]],
+        items: Sequence[Union[dict, list, str, int, bool]],
     ) -> dict:
         ...
 
-    @typing.overload
+    @overload
     def put_many(
         self,
-        items: typing.Sequence[typing.Union[dict, list, str, int, bool]],
+        items: Sequence[Union[dict, list, str, int, bool]],
         *,
         expire_in: int,
     ) -> dict:
         ...
 
-    @typing.overload
+    @overload
     def put_many(
         self,
-        items: typing.Sequence[typing.Union[dict, list, str, int, bool]],
+        items: Sequence[Union[dict, list, str, int, bool]],
         *,
-        expire_at: typing.Union[int, float, datetime.datetime],
+        expire_at: Union[int, float, datetime.datetime],
     ) -> dict:
         ...
 
@@ -201,7 +207,13 @@ class _Base(_Service):
         _, res = self._request("/items", "PUT", {"items": _items}, content_type=JSON_MIME)
         return res
 
-    def fetch(self, query: typing.Union[dict, list] = None, *, limit: int = 1000, last: str = None):
+    def fetch(
+        self,
+        query: Optional[Union[Mapping, Sequence[Mapping]]] = None,
+        *,
+        limit: int = 1000,
+        last: Optional[str] = None,
+    ):
         """Fetch items from the database. `query` is an optional filter or list of filters.
         Without a filter, it will return the whole db.
         """
@@ -211,37 +223,37 @@ class _Base(_Service):
         }
 
         if query:
-            payload["query"] = query if isinstance(query, list) else [query]
+            payload["query"] = query if isinstance(query, Sequence) else [query]
 
         _, res = self._request("/query", "POST", payload, content_type=JSON_MIME)
         paging = res.get("paging")
         return FetchResponse(paging.get("size"), paging.get("last"), res.get("items"))
 
-    @typing.overload
+    @overload
     def update(
         self,
-        updates: typing.Mapping,
+        updates: Mapping,
         key: str,
     ):
         ...
 
-    @typing.overload
+    @overload
     def update(
         self,
-        updates: typing.Mapping,
+        updates: Mapping,
         key: str,
         *,
         expire_in: int,
     ):
         ...
 
-    @typing.overload
+    @overload
     def update(
         self,
-        updates: typing.Mapping,
+        updates: Mapping,
         key: str,
         *,
-        expire_at: typing.Union[int, float, datetime.datetime],
+        expire_at: Union[int, float, datetime.datetime],
     ):
         ...
 
