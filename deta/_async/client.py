@@ -21,7 +21,7 @@ class _AsyncBase:
         project_id: str,
         *,
         host: Optional[str] = None,
-        session: Optional[aiohttp.ClientSession] = None,
+        session: "Optional[aiohttp.ClientSession]" = None,
     ):
         if not has_aiohttp:
             raise RuntimeError("aiohttp library is required for async support")
@@ -35,13 +35,16 @@ class _AsyncBase:
         self.util = Util()
         self._ttl_attribute = BASE_TTL_ATTRIBUTE
 
-        self._session = session or aiohttp.ClientSession(
-            headers={
-                "Content-type": "application/json",
-                "X-API-Key": project_key,
-            },
-            raise_for_status=True,
-        )
+        if session is not None:
+            self._session = session
+        else:
+            self._session = aiohttp.ClientSession(
+                headers={
+                    "Content-type": "application/json",
+                    "X-API-Key": project_key,
+                },
+                raise_for_status=True,
+            )
 
     async def close(self):
         await self._session.close()
@@ -51,7 +54,7 @@ class _AsyncBase:
         try:
             async with self._session.get(f"{self._base_url}/items/{key}") as resp:
                 return await resp.json()
-        except aiohttp.ClientResponseError as e:  # type: ignore
+        except aiohttp.ClientResponseError as e:
             if e.status == 404:
                 return
             else:

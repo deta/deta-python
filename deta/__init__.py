@@ -21,17 +21,18 @@ __version__ = "1.1.0"
 
 def Base(name: str, host: Optional[str] = None):
     project_key, project_id = _get_project_key_id()
-    return _Base(name, project_key, project_id, host)
+    return _Base(name, project_key, project_id, host=host)
 
 
-def AsyncBase(name: str, host: Optional[str] = None):
+# TODO: type hint for session
+def AsyncBase(name: str, host: Optional[str] = None, session=None):
     project_key, project_id = _get_project_key_id()
-    return _AsyncBase(name, project_key, project_id, host)
+    return _AsyncBase(name, project_key, project_id, host=host, session=session)
 
 
 def Drive(name: str, host: Optional[str] = None):
     project_key, project_id = _get_project_key_id()
-    return _Drive(name, project_key, project_id, host)
+    return _Drive(name, project_key, project_id, host=host)
 
 
 class Deta:
@@ -39,13 +40,14 @@ class Deta:
         self.project_key, self.project_id = _get_project_key_id(project_key, project_id)
 
     def Base(self, name: str, host: Optional[str] = None):
-        return _Base(name, self.project_key, self.project_id, host)
+        return _Base(name, self.project_key, self.project_id, host=host)
 
-    def AsyncBase(self, name: str, host: Optional[str] = None):
-        return _AsyncBase(name, self.project_key, self.project_id, host)
+    # TODO: type hint for session
+    def AsyncBase(self, name: str, host: Optional[str] = None, session=None):
+        return _AsyncBase(name, self.project_key, self.project_id, host=host, session=session)
 
     def Drive(self, name: str, host: Optional[str] = None):
-        return _Drive(name, self.project_key, self.project_id, host)
+        return _Drive(name, self.project_key, self.project_id, host=host)
 
     def send_email(
         self,
@@ -63,7 +65,7 @@ def send_email(
     message: str,
     charset: str = "utf-8",
 ):
-    # should function continue if these are not present?
+    # FIXME: should function continue if these are not present?
     pid = os.getenv("AWS_LAMBDA_FUNCTION_NAME")
     url = os.getenv("DETA_MAILER_URL")
     api_key = os.getenv("DETA_PROJECT_KEY")

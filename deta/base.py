@@ -22,7 +22,7 @@ class FetchResponse:
     def __iter__(self):
         return iter(self.items)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.items)
 
 
@@ -56,7 +56,7 @@ class Util:
 
 
 class _Base(_Service):
-    def __init__(self, name: str, project_key: str, project_id: str, host: Optional[str] = None):
+    def __init__(self, name: str, project_key: str, project_id: str, *, host: Optional[str] = None):
         if not name:
             raise ValueError("parameter 'name' must be a non-empty string")
 
@@ -294,9 +294,14 @@ class _Base(_Service):
             raise ValueError(f"key '{key}' not found")
 
 
-def insert_ttl(item, ttl_attribute, expire_in=None, expire_at=None):
+def insert_ttl(
+    item,
+    ttl_attribute: str,
+    expire_in: Optional[Union[int, float]] = None,
+    expire_at: Optional[Union[int, float, datetime.datetime]] = None,
+):
     if expire_in and expire_at:
-        raise ValueError("both 'expire_in' and 'expire_at' provided")
+        raise ValueError("'expire_in' and 'expire_at' are mutually exclusive parameters")
 
     if not expire_in and not expire_at:
         return

@@ -45,7 +45,7 @@ class DriveStreamingBody:
 
 
 class _Drive(_Service):
-    def __init__(self, name: str, project_key: str, project_id: str, host: Optional[str] = None):
+    def __init__(self, name: str, project_key: str, project_id: str, *, host: Optional[str] = None):
         if not name:
             raise ValueError("parameter 'name' must be a non-empty string")
 
@@ -55,7 +55,7 @@ class _Drive(_Service):
     def _quote(self, param: str) -> str:
         return quote_plus(param)
 
-    def get(self, name: str) -> DriveStreamingBody:
+    def get(self, name: str) -> Optional[DriveStreamingBody]:
         """Download a file from drive.
         `name` is the name of the file.
         Returns a DriveStreamingBody.
@@ -158,7 +158,12 @@ class _Drive(_Service):
                 content_stream.close()
                 raise e
 
-    def list(self, limit: int = 1000, prefix: Optional[str] = None, last: Optional[str] = None) -> Dict[str, Any]:
+    def list(
+        self,
+        limit: int = 1000,
+        prefix: Optional[str] = None,
+        last: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """List file names from drive.
         `limit` is the number of file names to get, defaults to 1000.
         `prefix` is the prefix of file names.
