@@ -158,7 +158,11 @@ class _Base(_Service):
         code, res = self._request(
             "/items", "PUT", {"items": [data]}, content_type=JSON_MIME
         )
-        return res["processed"]["items"][0] if res and code == 207 else None
+
+        if code == 207 and "processed" in res:
+            return res["processed"]["items"][0]
+        else:
+            return None
 
     def put_many(
         self,
