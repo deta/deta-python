@@ -382,7 +382,7 @@ class TestBaseMethods(unittest.TestCase):
 
     def test_ttl(self):
         expire_in = 300
-        expire_at = datetime.datetime(2022, 3, 1, 12, 30, 30)
+        expire_at = datetime.datetime.now() + datetime.timedelta(seconds=300)
         delta = 2  # allow time delta of 2 seconds
         test_cases = [
             {
