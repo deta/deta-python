@@ -10,7 +10,7 @@ if [ ! -z "$GITHUB_ACTIONS" ]; then
 
   if [ "${VERSION}" != "${VERSION_SETUP}" ] ; then
     echo "__init__.py version '${VERSION}' did not match setup version '${VERSION_SETUP}'"
-    exit 15
+    exit 1
   fi
 fi
 

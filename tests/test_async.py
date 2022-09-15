@@ -10,7 +10,7 @@ try:
     from dotenv import load_dotenv
 
     load_dotenv()
-except:
+except ImportError:
     pass
 
 pytestmark = pytest.mark.asyncio
@@ -18,7 +18,7 @@ pytestmark = pytest.mark.asyncio
 
 PROJECT_KEY = os.getenv("DETA_SDK_TEST_PROJECT_KEY")
 BASE_NAME = os.getenv("DETA_SDK_TEST_BASE_NAME")
-BASE_TEST_TTL_ATTRIBUTE = os.getenv("DETA_SDK_TEST_TTL_ATTRIBUTE")
+BASE_TEST_TTL_ATTRIBUTE = os.getenv("DETA_SDK_TEST_TTL_ATTRIBUTE") or "__expires"
 
 
 @pytest.fixture()
@@ -61,7 +61,7 @@ async def test_put(db):
     for input in ["Hello", 1, True, False, 3.14159265359]:
 
         resp = await db.put(input)
-        assert set(resp.keys()) == set(["key", "value"])
+        assert set(resp.keys()) == {"key", "value"}
 
 
 async def test_put_fail(db):
@@ -86,13 +86,13 @@ async def test_put_many_fail(db):
 
 async def test_put_many_fail_limit(db):
     with pytest.raises(Exception):
-        await db.put_many([i for i in range(26)])
+        await db.put_many(list(range(26)))
 
 
 async def test_insert(db):
     item = {"msg": "hello"}
     resp = await db.insert(item)
-    assert set(resp.keys()) == set(["key", "msg"])
+    assert set(resp.keys()) == {"key", "msg"}
 
 
 async def test_insert_fail(db, items):
@@ -105,15 +105,15 @@ async def test_get(db, items):
     assert resp == items[0]
 
     resp = await db.get("key_does_not_exist")
-    assert resp == None
+    assert resp is None
 
 
 async def test_delete(db, items):
     resp = await db.delete(items[0]["key"])
-    assert resp == None
+    assert resp is None
 
     resp = await db.delete("key_does_not_exist")
-    assert resp == None
+    assert resp is None
 
 
 async def test_fetch(db, items):
@@ -149,9 +149,7 @@ async def test_fetch(db, items):
     )
     assert res3 == expectedItem
 
-    res4 = await db.fetch(
-        [{"value?gt": 6}, {"value?lt": 50}], limit=2, last="existing2"
-    )
+    res4 = await db.fetch([{"value?gt": 6}, {"value?lt": 50}], limit=2, last="existing2")
     expectedItem = FetchResponse(
         1,
         None,
@@ -186,7 +184,7 @@ async def test_fetch(db, items):
 
 async def test_update(db, items):
     resp = await db.update({"value.name": "spongebob"}, "existing4")
-    assert resp == None
+    assert resp is None
 
     resp = await db.get("existing4")
     expectedItem = {"key": "existing4", "value": {"name": "spongebob"}}
@@ -194,7 +192,7 @@ async def test_update(db, items):
 
     resp = await db.update({"value.name": db.util.trim(), "value.age": 32}, "existing4")
 
-    assert resp == None
+    assert resp is None
     expectedItem = {"key": "existing4", "value": {"age": 32}}
     resp = await db.get("existing4")
 
@@ -207,13 +205,13 @@ async def test_update(db, items):
         },
         "%@#//#!#)#$_",
     )
-    assert resp == None
+    assert resp is None
 
     resp = await db.update(
         {"list": db.util.prepend("x"), "value": db.util.increment(2)},
         "%@#//#!#)#$_",
     )
-    assert resp == None
+    assert resp is None
     expectedItem = {"key": "%@#//#!#)#$_", "list": ["x", "a", "b", "c"], "value": 3}
     resp = await db.get("%@#//#!#)#$_")
     assert resp == expectedItem
@@ -258,7 +256,7 @@ def get_expire_in(expire_in):
 async def test_ttl(db, items):
     item1 = items[0]
     expire_in = 300
-    expire_at = datetime.datetime(2022, 3, 1, 12, 30, 30)
+    expire_at = datetime.datetime.now() + datetime.timedelta(seconds=300)
     delta = 2  # allow time delta of 2 seconds
     test_cases = [
         {
@@ -323,9 +321,7 @@ async def test_ttl(db, items):
             # update
             # only if one of expire_in or expire_at
             if cexp_in or cexp_at:
-                await db.update(
-                    None, item.get("key"), expire_in=cexp_in, expire_at=cexp_at
-                )
+                await db.update(None, item.get("key"), expire_in=cexp_in, expire_at=cexp_at)
                 got = await db.get(item.get("key"))
                 assert abs(expected - got.get(BASE_TEST_TTL_ATTRIBUTE)) <= cdelta
         else:
@@ -336,6 +332,4 @@ async def test_ttl(db, items):
             with pytest.raises(error):
                 await db.insert(item, expire_in=cexp_in, expire_at=cexp_at)
             with pytest.raises(error):
-                await db.update(
-                    None, item.get("key"), expire_in=cexp_in, expire_at=cexp_at
-                )
+                await db.update(None, item.get("key"), expire_in=cexp_in, expire_at=cexp_at)

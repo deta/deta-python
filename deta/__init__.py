@@ -1,78 +1,87 @@
 import os
+import json
 import urllib.error
 import urllib.request
-import json
+from typing import Optional, Sequence, Union
 
 from .base import _Base
+from ._async.client import _AsyncBase
 from .drive import _Drive
 from .utils import _get_project_key_id
 
-
 try:
-    from detalib.app import App
+    from detalib.app import App  # type: ignore
 
     app = App()
-except Exception:
-    pass
-
-try:
-    from ._async.client import AsyncBase
 except ImportError:
     pass
 
 __version__ = "1.1.0"
 
 
-
-def Base(name: str):
+def Base(name: str, host: Optional[str] = None):
     project_key, project_id = _get_project_key_id()
-    return _Base(name, project_key, project_id)
+    return _Base(name, project_key, project_id, host=host)
 
 
-def Drive(name: str):
+# TODO: type hint for session
+def AsyncBase(name: str, host: Optional[str] = None, session=None):
     project_key, project_id = _get_project_key_id()
-    return _Drive(name, project_key, project_id)
+    return _AsyncBase(name, project_key, project_id, host=host, session=session)
+
+
+def Drive(name: str, host: Optional[str] = None):
+    project_key, project_id = _get_project_key_id()
+    return _Drive(name, project_key, project_id, host=host)
 
 
 class Deta:
-    def __init__(self, project_key: str = None, *, project_id: str = None):
-        project_key, project_id = _get_project_key_id(project_key, project_id)
-        self.project_key = project_key
-        self.project_id = project_id
+    def __init__(self, project_key: Optional[str] = None, *, project_id: Optional[str] = None):
+        self.project_key, self.project_id = _get_project_key_id(project_key, project_id)
 
-    def Base(self, name: str, host: str = None):
-        return _Base(name, self.project_key, self.project_id, host)
+    def Base(self, name: str, host: Optional[str] = None):
+        return _Base(name, self.project_key, self.project_id, host=host)
 
-    def AsyncBase(self, name: str, host: str = None):
-        from ._async.client import _AsyncBase
-        return _AsyncBase(name, self.project_key, self.project_id, host)
+    # TODO: type hint for session
+    def AsyncBase(self, name: str, host: Optional[str] = None, session=None):
+        return _AsyncBase(name, self.project_key, self.project_id, host=host, session=session)
 
-    def Drive(self, name: str, host: str = None):
-        return _Drive(
-            name=name,
-            project_key=self.project_key,
-            project_id=self.project_id,
-            host=host,
-        )
+    def Drive(self, name: str, host: Optional[str] = None):
+        return _Drive(name, self.project_key, self.project_id, host=host)
 
-    def send_email(self, to, subject, message, charset="UTF-8"):
-        return send_email(to, subject, message, charset)
+    def send_email(
+        self,
+        to: Union[str, Sequence[str]],
+        subject: str,
+        message: str,
+        charset: str = "utf-8",
+    ):
+        send_email(to, subject, message, charset)
 
 
-def send_email(to, subject, message, charset="UTF-8"):
+def send_email(
+    to: Union[str, Sequence[str]],
+    subject: str,
+    message: str,
+    charset: str = "utf-8",
+):
+    # FIXME: should function continue if these are not present?
     pid = os.getenv("AWS_LAMBDA_FUNCTION_NAME")
     url = os.getenv("DETA_MAILER_URL")
     api_key = os.getenv("DETA_PROJECT_KEY")
     endpoint = f"{url}/mail/{pid}"
 
-    to = to if type(to) == list else [to]
+    if isinstance(to, str):
+        to = [to]
+    else:
+        to = list(to)
+
     data = {
         "to": to,
         "subject": subject,
         "message": message,
         "charset": charset,
     }
-
     headers = {"X-API-Key": api_key}
 
     req = urllib.request.Request(endpoint, json.dumps(data).encode("utf-8"), headers)
@@ -82,4 +91,4 @@ def send_email(to, subject, message, charset="UTF-8"):
         if resp.getcode() != 200:
             raise Exception(resp.read().decode("utf-8"))
     except urllib.error.URLError as e:
-        raise Exception(e.reason)
+        raise Exception(e.reason) from e

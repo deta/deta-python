@@ -2,15 +2,15 @@
 
 VERSION_FILE="deta/__init__.py"
 
-if [ -d 'venv' ] ; then
-    PREFIX="venv/bin/"
+if [ -d '.venv' ] ; then
+    PREFIX=".venv/bin/"
 else
     PREFIX=""
 fi
 
 if [ ! -z "$GITHUB_ACTIONS" ]; then
-  git config --local user.email "action@github.com"
-  git config --local user.name "GitHub Action"
+  git config --local user.email "actions@github.com"
+  git config --local user.name "GitHub Actions"
 
   VERSION=`grep __version__ ${VERSION_FILE} | grep -o '[0-9][^"]*'`
 

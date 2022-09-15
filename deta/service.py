@@ -1,10 +1,10 @@
-import http.client
 import os
 import json
 import socket
+import http.client
 import struct
-import typing
 import urllib.error
+from typing import Mapping, MutableMapping, Optional, Tuple, Union
 
 JSON_MIME = "application/json"
 
@@ -20,13 +20,11 @@ class _Service:
         keep_alive: bool = True,
     ):
         self.project_key = project_key
-        self.base_path = "/v1/{0}/{1}".format(project_id, name)
+        self.base_path = f"/v1/{project_id}/{name}"
         self.host = host
         self.timeout = timeout
         self.keep_alive = keep_alive
-        self.client = (
-            http.client.HTTPSConnection(host, timeout=timeout) if keep_alive else None
-        )
+        self.client = http.client.HTTPSConnection(host, timeout=timeout) if keep_alive else None
 
     def _is_socket_closed(self):
         if not self.client.sock:
@@ -44,11 +42,11 @@ class _Service:
         self,
         path: str,
         method: str,
-        data: typing.Union[str, bytes, dict] = None,
-        headers: dict = None,
-        content_type: str = None,
+        data: Optional[Union[str, bytes, dict]] = None,
+        headers: Optional[MutableMapping[str, str]] = None,
+        content_type: Optional[str] = None,
         stream: bool = False,
-    ):
+    ) -> Tuple[int, Optional[dict]]:
         url = self.base_path + path
         headers = headers or {}
         headers["X-Api-Key"] = self.project_key
@@ -66,7 +64,7 @@ class _Service:
                 and self._is_socket_closed()
             ):
                 self.client.close()
-        except:
+        except Exception:
             pass
 
         # send request
@@ -92,9 +90,7 @@ class _Service:
 
         # return json if application/json
         payload = (
-            json.loads(res.read())
-            if JSON_MIME in res.getheader("content-type")
-            else res.read()
+            json.loads(res.read()) if JSON_MIME in res.getheader("content-type") else res.read()
         )
 
         if not self.keep_alive:
@@ -105,17 +101,16 @@ class _Service:
         self,
         method: str,
         url: str,
-        headers: dict = None,
-        body: typing.Union[str, bytes, dict] = None,
-        retry=2,  # try at least twice to regain a new connection
+        headers: Optional[Mapping[str, str]] = None,
+        body: Optional[Union[str, bytes, dict]] = None,
+        retry: int = 2,  # try at least twice to regain a new connection
     ):
-        reinitialize_connection = False
+        headers = headers if headers is not None else {}
+        reinit_connection = False
         while retry > 0:
             try:
-                if not self.keep_alive or reinitialize_connection:
-                    self.client = http.client.HTTPSConnection(
-                        host=self.host, timeout=self.timeout
-                    )
+                if not self.keep_alive or reinit_connection:
+                    self.client = http.client.HTTPSConnection(host=self.host, timeout=self.timeout)
 
                 self.client.request(
                     method,
@@ -126,5 +121,5 @@ class _Service:
                 res = self.client.getresponse()
                 return res
             except http.client.RemoteDisconnected:
-                reinitialize_connection = True
+                reinit_connection = True
                 retry -= 1

@@ -17,10 +17,10 @@ source .venv/bin/activate
 **Windows**  
 
 ```powershell
-venv/scripts/activate
+.venv/scripts/activate
 ```
     
-### Installing the dependencies
+### Install the dependencies
 
 ```sh
 pip install -r requirements.txt
@@ -36,21 +36,21 @@ cp env.sample .env
 
 Then provide the values as follows:
 
-- `DETA_SDK_TEST_PROJECT_KEY` – Test project key (create a new Deta project for testing and grab the generated key).
-- `DETA_SDK_TEST_BASE_NAME` – Name of your Base, default is fine.
-- `DETA_SDK_TEST_DRIVE_NAME` – Name of your Drive, default is fine.
-- `DETA_SDK_TEST_DRIVE_HOST` – Host URL, default is fine.
+- `DETA_SDK_TEST_PROJECT_KEY` - Test project key (create a new Deta project for testing and grab the generated key).
+- `DETA_SDK_TEST_BASE_NAME` - Name of your Base, default is fine.
+- `DETA_SDK_TEST_DRIVE_NAME` - Name of your Drive, default is fine.
+- `DETA_SDK_TEST_DRIVE_HOST` - Host URL, default is fine.
 
 ### Run the tests
 
 ```sh
-python tests.py
+pytest tests
 ``` 
    
 🎉 Now you are ready to contribute!
    
 ### How to contribute
-1. Git clone and make a feature branch
-2. Make a draft PR
+1. Clone this repo and make a feature branch
+2. Make a draft pull request
 3. Make your changes to the feature branch
-4. Mark draft as ready for review
+4. Mark your draft as ready for review

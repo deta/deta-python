@@ -17,4 +17,8 @@ setup(
     extras_require={
         "async": ["aiohttp>=3,<4"],
     },
+    package_data={
+        'deta': ['py.typed'],
+    },
+    zip_safe=False,
 )

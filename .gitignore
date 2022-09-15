@@ -1,11 +1,13 @@
 .*
 !.gitignore
 !.github/
-__pycache__
+__pycache__/
 test.py
 build/
+dist/
 *.egg-info
-dist
 testEnv
 .env
+env/
 venv/
+.venv/
