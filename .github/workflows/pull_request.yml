@@ -12,7 +12,7 @@ jobs:
       # tests can't run in parallel as they write and read data with same keys
       max-parallel: 1
       matrix:
-        python-version: ["3.7", "3.8", "3.9"]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
     steps:
       # Get the code into the container
       - name: Checkout
