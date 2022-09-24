@@ -105,15 +105,15 @@ async def test_get(db, items):
     assert resp == items[0]
 
     resp = await db.get("key_does_not_exist")
-    assert resp == None
+    assert resp is None
 
 
 async def test_delete(db, items):
     resp = await db.delete(items[0]["key"])
-    assert resp == None
+    assert resp is None
 
     resp = await db.delete("key_does_not_exist")
-    assert resp == None
+    assert resp is None
 
 
 async def test_fetch(db, items):
@@ -186,7 +186,7 @@ async def test_fetch(db, items):
 
 async def test_update(db, items):
     resp = await db.update({"value.name": "spongebob"}, "existing4")
-    assert resp == None
+    assert resp is None
 
     resp = await db.get("existing4")
     expectedItem = {"key": "existing4", "value": {"name": "spongebob"}}
@@ -194,7 +194,7 @@ async def test_update(db, items):
 
     resp = await db.update({"value.name": db.util.trim(), "value.age": 32}, "existing4")
 
-    assert resp == None
+    assert resp is None
     expectedItem = {"key": "existing4", "value": {"age": 32}}
     resp = await db.get("existing4")
 
@@ -207,13 +207,13 @@ async def test_update(db, items):
         },
         "%@#//#!#)#$_",
     )
-    assert resp == None
+    assert resp is None
 
     resp = await db.update(
         {"list": db.util.prepend("x"), "value": db.util.increment(2)},
         "%@#//#!#)#$_",
     )
-    assert resp == None
+    assert resp is None
     expectedItem = {"key": "%@#//#!#)#$_", "list": ["x", "a", "b", "c"], "value": 3}
     resp = await db.get("%@#//#!#)#$_")
     assert resp == expectedItem
