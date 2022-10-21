@@ -229,7 +229,7 @@ class _Base(_Service):
         """
         update an item in the database
         `updates` specifies the attribute names and values to update,add or remove
-        `key` is the kye of the item to be updated
+        `key` is the key of the item to be updated
         """
 
         if key == "":
