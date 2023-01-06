@@ -4,6 +4,7 @@ import os
 import random
 import string
 import unittest
+from pathlib import Path
 
 from deta import Deta
 from deta.drive import UPLOAD_CHUNK_SIZE
@@ -206,14 +207,20 @@ class TestBaseMethods(unittest.TestCase):
     def test_put(self):
         item = {"msg": "hello"}
         resp = {"key": "one", "msg": "hello"}
+        example_path = Path(__file__).parent / ".."
         self.assertEqual(self.db.put(item, "one"), resp)
         self.assertEqual(self.db.put(item, "one"), resp)
         self.assertEqual({"msg": "hello"}, item)
+        self.assertEqual(
+            self.db.put({"example_path": example_path}, "example_key"),
+            {"example_path": example_path.resolve().as_posix(), "key": "example_key"}
+        )
         self.assertEqual(set(self.db.put("Hello").keys()), set(["key", "value"]))
         self.assertEqual(set(self.db.put(1).keys()), set(["key", "value"]))
         self.assertEqual(set(self.db.put(True).keys()), set(["key", "value"]))
         self.assertEqual(set(self.db.put(False).keys()), set(["key", "value"]))
         self.assertEqual(set(self.db.put(3.14159265359).keys()), set(["key", "value"]))
+        self.assertEqual(set(self.db.put(example_path).keys()), set(["key", "value"]))
 
     @unittest.expectedFailure
     def test_put_fail(self):

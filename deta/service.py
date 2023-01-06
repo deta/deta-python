@@ -5,8 +5,17 @@ import socket
 import struct
 import typing
 import urllib.error
+from pathlib import Path
 
 JSON_MIME = "application/json"
+
+
+class CustomEncoder(json.JSONEncoder):
+
+    def default(self, o: typing.Any) -> typing.Any:
+        if isinstance(o, Path):
+            return o.resolve().as_posix()
+        return super().default(o)
 
 
 class _Service:
@@ -70,7 +79,9 @@ class _Service:
             pass
 
         # send request
-        body = json.dumps(data) if content_type == JSON_MIME else data
+        body = json.dumps(
+            data, cls=CustomEncoder
+        ) if content_type == JSON_MIME else data
 
         # response
         res = self._send_request_with_retry(method, url, headers, body)
