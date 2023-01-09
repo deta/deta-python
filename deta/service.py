@@ -10,7 +10,7 @@ from pathlib import Path
 JSON_MIME = "application/json"
 
 
-class CustomEncoder(json.JSONEncoder):
+class CustomJSONEncoder(json.JSONEncoder):
 
     def default(self, o: typing.Any) -> typing.Any:
         if isinstance(o, Path):
@@ -80,7 +80,7 @@ class _Service:
 
         # send request
         body = json.dumps(
-            data, cls=CustomEncoder
+            data, cls=CustomJSONEncoder
         ) if content_type == JSON_MIME else data
 
         # response
