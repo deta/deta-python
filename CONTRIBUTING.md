@@ -5,7 +5,7 @@
 ### Installing the dependencies
 
 ```sh
-poetry install
+poetry install -E async
 ```
 
 ### Activate the virtualenv

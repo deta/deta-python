@@ -24,7 +24,7 @@ jobs:
         cache-dependency-path: poetry.lock
         python-version: ${{ matrix.python-version }}
     - uses: abatilo/actions-poetry@v2
-    - run: poetry install --no-interaction
+    - run: poetry install --no-interaction -E async
     # Test the code
     - name: Test code
       env:

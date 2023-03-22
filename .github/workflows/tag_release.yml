@@ -24,7 +24,7 @@ jobs:
       uses: abatilo/actions-poetry@v2
     # Install dependencies
     - name: Install dependencies
-      run: poetry install --no-interaction
+      run: poetry install --no-interaction -E async
     # Make tag
     - name: Make git tag
       run: scripts/tag

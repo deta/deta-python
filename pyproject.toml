@@ -39,8 +39,8 @@ version = "1.1.0"
 [tool.poetry.dependencies]
 python = ">=3.8,<4"
 
-[tool.poetry.group.async.dependencies]
-aiohttp = "^3.8.4"
+[tool.poetry.extras]
+async = ["aiohttp"]
 
 [tool.poetry.group.dev.dependencies]
 mypy = ">=0.991,<1.2"
