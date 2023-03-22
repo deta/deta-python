@@ -1,0 +1,70 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = [
+  "poetry-core",
+]
+
+[tool]
+[tool.black]
+line-length = 120
+target-version = ["py39"]
+
+[tool.isort]
+profile = "black"
+
+[tool.mypy]
+pretty = true
+python_version = "3.9"
+show_error_codes = true
+strict = true
+
+[tool.ruff]
+select = ["ALL"]
+ignore = ["D", "ANN101"]
+line-length = 120
+
+# [tool.ruff.mccabe]
+# max-complexity = 18
+
+[tool.ruff.per-file-ignores]
+# "main.py" = [
+#   "T201", # `print` found
+# ]
+# "tests/*test_*.py" = [
+#   "INP001",  # File tests/test_*.py is part of an implicit namespace package. Add an __init__.py.
+#   "S101", # Use of assert detected
+# ]
+
+[tool.poetry]
+authors = ["Deta <hello@deta.sh>"]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Operating System :: OS Independent",
+]
+description = "Python SDK for Deta Base & Deta Drive."
+keywords = ["deta", "deta-base", "deta-drive"]
+name = "deta"
+packages = [
+  {include = "deta"},
+  {include = "deta/_async"},
+]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/deta/deta-python"
+version = "1.1.0"
+
+[tool.poetry.dependencies]
+python = ">=3.8,<4"
+
+[tool.poetry.group.async.dependencies]
+aiohttp = "^3.8.4"
+
+[tool.poetry.group.dev.dependencies]
+mypy = ">=0.991,<1.2"
+pre-commit = "^2.20.0"
+pytest = "^7.2.2"
+python-dotenv = "^1.0.0"
+pytest-asyncio = "^0.21.0"
