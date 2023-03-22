@@ -2,25 +2,22 @@
 .DEFAULT_GOAL := help
 
 test: # Run Unit Test
-	pytest tests
+	poetry run pytest tests/
 
 test_email: # Test Send Email
-	pytest tests -k "TestSendEmail"
+	poetry run pytest tests/ -k "TestSendEmail"
 
 build: # Build distribution for SDK
-	python setup.py sdist bdist_wheel
+	poetry build
 
 publish: # Publish the package to PyPI
-	python -m twine upload dist/*
+	poetry publish --build
 
 clean: # Remove distribution packages
-	rm -rf dist build deta.egg.egg-info
+	rm -rf dist/
 
-format: # Format using black
-	@black -l 100 .
-
-check: # Check for files to format using black
-	@black -l 100 --check --diff .
+lint: # Check and format codes with pre-commit
+	poetry run pre-commit run -a
 
 help: # Show this help
 	@echo "Deta Python SDK"
