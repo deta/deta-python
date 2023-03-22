@@ -1,27 +1,3 @@
 #!/bin/sh -e
 
-VERSION_FILE="deta/__init__.py"
-SETUP_FILE="setup.py"
-
-if [ -d 'venv' ] ; then
-    PREFIX="venv/bin/"
-else
-    PREFIX=""
-fi
-
-if [ ! -z "$GITHUB_ACTIONS" ]; then
-  git config --local user.email "action@github.com"
-  git config --local user.name "GitHub Action"
-
-  VERSION=`grep __version__ ${VERSION_FILE} | grep -o '[0-9][^"]*'`
-  VERSION_SETUP=`grep version ${SETUP_FILE}| grep -o '[0-9][^"]*'`
-
-  if [ "${VERSION}" != "${VERSION_SETUP}" ] ; then
-    echo "__init__.py version '${VERSION}' did not match setup version '${VERSION_SETUP}'"
-    exit 1
-  fi
-fi
-
-#set -x
-
-${PREFIX}twine upload dist/*
+"$(dirname "$0")/_check_version" >/dev/null && poetry publish --build

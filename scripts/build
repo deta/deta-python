@@ -1,12 +1,7 @@
 #!/bin/sh -e
 
-if [ -d 'venv' ] ; then
-    PREFIX="venv/bin/"
-else
-    PREFIX=""
+if ! command -v poetry >/dev/null &2>1; then
+  exit 1
 fi
 
-#set -x
-
-${PREFIX}python setup.py sdist bdist_wheel
-${PREFIX}twine check dist/*
+poetry build

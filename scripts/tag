@@ -1,18 +1,6 @@
 #!/bin/sh -e
 
-VERSION_FILE="deta/__init__.py"
-SETUP_FILE="setup.py"
-
-if [ ! -z "$GITHUB_ACTIONS" ]; then
-
-  VERSION=`grep __version__ ${VERSION_FILE} | grep -o '[0-9][^"]*'`
-  VERSION_SETUP=`grep version ${SETUP_FILE} | grep -o '[0-9][^"]*'`
-
-  if [ "${VERSION}" != "${VERSION_SETUP}" ] ; then
-    echo "__init__.py version '${VERSION}' did not match setup version '${VERSION_SETUP}'"
-    exit 15
-  fi
-fi
-
-git tag "v${VERSION}"
-git push origin "v${VERSION}"
+VERSION=$("$(dirname "$0")/_check_version") && {
+  git tag "v${VERSION}"
+  git push origin "v${VERSION}"
+}

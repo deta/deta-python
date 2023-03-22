@@ -1,20 +1,11 @@
 #!/bin/sh -e
 
-# Use the Python executable provided from the `-p` option, or a default.
-[ "$1" = "-p" ] && PYTHON=$2 || PYTHON="python3"
-
-REQUIREMENTS="requirements.txt"
-VENV="venv"
-
-#set -x
-
-if [ -z "$GITHUB_ACTIONS" ]; then
-    "$PYTHON" -m venv "$VENV"
-    PIP="$VENV/bin/pip"
-else
-    PIP="pip"
+if ! command -v poetry >/dev/null &2>1; then
+  exit 1
 fi
 
-"$PIP" install -r "$REQUIREMENTS"
+poetry install
 
-sudo apt-get install gh
+if ! command -v gh >/dev/null &2>1; then
+  sudo apt-get install gh
+fi
