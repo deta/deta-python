@@ -1,29 +1,15 @@
 ## Setting up your environment
 
-### Create a virtual environment  
+### Installing the dependencies
 
 ```sh
-python3 -m venv .venv
+poetry install
 ```
 
 ### Activate the virtualenv
 
-**Mac/Linux**  
-
 ```sh
-source .venv/bin/activate
-```
-
-**Windows**  
-
-```powershell
-venv/scripts/activate
-```
-    
-### Installing the dependencies
-
-```sh
-pip install -r requirements.txt
+poetry shell
 ```
 
 ### Configure the environment variables
@@ -44,13 +30,14 @@ Then provide the values as follows:
 ### Run the tests
 
 ```sh
-python tests.py
-``` 
-   
+poetry run pytest
+```
+
 🎉 Now you are ready to contribute!
-   
+
 ### How to contribute
+
 1. Git clone and make a feature branch
-2. Make a draft PR
-3. Make your changes to the feature branch
-4. Mark draft as ready for review
+1. Make a draft PR
+1. Make your changes to the feature branch
+1. Mark draft as ready for review

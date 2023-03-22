@@ -1,6 +1,6 @@
 # Deta Python Library (SDK)
 
-Supports Python 3.5+ only. [Read the docs.](https://docs.deta.sh/docs/base/sdk)  
+Supports Python 3.8+ only. [Read the docs.](https://docs.deta.sh/docs/base/sdk)  
 
 Install from PyPi
 
