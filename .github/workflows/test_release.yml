@@ -1,30 +1,19 @@
 name: Test release
 
-on: 
+on:
   workflow_dispatch:
 
 jobs:
   release:
    runs-on: ubuntu-18.04
    steps:
-    # Get the code into our container
-    - name: Checkout
-      uses: actions/checkout@v2
-    # Setup Python
-    - name: Setup Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: ^3.5
-    # Install dependencies
-    - name: Install dependencies
-      run: "scripts/install"
-    # Build package
-    - name: Build package
-      run: "scripts/build"
-    # Publish with twine
-    - name: Publish with twine
-      run: "scripts/test_publish"
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_TEST_TOKEN }}
-    
+   # Get the code into our container
+   - name: Checkout
+     uses: actions/checkout@v3
+     with:
+       persist-credentials: false
+   # Publish with poetry
+   - name: Publish with poetry
+     uses: JRubics/poetry-publish@v1.16
+     with:
+       pypi_token: ${{ secrets.PYPI_TEST_TOKEN }}

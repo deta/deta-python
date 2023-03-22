@@ -1,6 +1,6 @@
 name: Lint and tag before release
 
-on: 
+on:
   push:
    branches:
     - release
@@ -11,15 +11,20 @@ jobs:
    steps:
     # Get the code into our container
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     # Setup Python
     - name: Setup Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
-        python-version: ^3.5
+        cache: pip
+        cache-dependency-path: poetry.lock
+        python-version: "3.9"
+    # Setup Python
+    - name: Setup Poetry
+      uses: abatilo/actions-poetry@v2
     # Install dependencies
     - name: Install dependencies
-      run: "scripts/install"
+      run: poetry install --no-interaction
     # Make tag
     - name: Make git tag
       run: "scripts/tag"
