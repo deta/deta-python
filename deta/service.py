@@ -24,17 +24,13 @@ class _Service:
         self.host = host
         self.timeout = timeout
         self.keep_alive = keep_alive
-        self.client = (
-            http.client.HTTPSConnection(host, timeout=timeout) if keep_alive else None
-        )
+        self.client = http.client.HTTPSConnection(host, timeout=timeout) if keep_alive else None
 
     def _is_socket_closed(self):
         if not self.client.sock:
             return True
         fmt = "B" * 7 + "I" * 21
-        tcp_info = struct.unpack(
-            fmt, self.client.sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_INFO, 92)
-        )
+        tcp_info = struct.unpack(fmt, self.client.sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_INFO, 92))
         # 8 = CLOSE_WAIT
         if len(tcp_info) > 0 and tcp_info[0] == 8:
             return True
@@ -60,11 +56,7 @@ class _Service:
         # close connection if socket is closed
         # fix for a bug in lambda
         try:
-            if (
-                self.client
-                and os.environ.get("DETA_RUNTIME") == "true"
-                and self._is_socket_closed()
-            ):
+            if self.client and os.environ.get("DETA_RUNTIME") == "true" and self._is_socket_closed():
                 self.client.close()
         except:
             pass
@@ -91,11 +83,7 @@ class _Service:
             return status, res
 
         ## return json if application/json
-        payload = (
-            json.loads(res.read())
-            if JSON_MIME in res.getheader("content-type")
-            else res.read()
-        )
+        payload = json.loads(res.read()) if JSON_MIME in res.getheader("content-type") else res.read()
 
         if not self.keep_alive:
             self.client.close()
@@ -113,9 +101,7 @@ class _Service:
         while retry > 0:
             try:
                 if not self.keep_alive or reinitializeConnection:
-                    self.client = http.client.HTTPSConnection(
-                        host=self.host, timeout=self.timeout
-                    )
+                    self.client = http.client.HTTPSConnection(host=self.host, timeout=self.timeout)
 
                 self.client.request(
                     method,

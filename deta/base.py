@@ -30,11 +30,7 @@ class FetchResponse:
         return self._items
 
     def __eq__(self, other):
-        return (
-            self.count == other.count
-            and self.last == other.last
-            and self.items == other.items
-        )
+        return self.count == other.count and self.last == other.last and self.items == other.items
 
 
 class Util:
@@ -125,9 +121,7 @@ class _Base(_Service):
             data["key"] = key
 
         insert_ttl(data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at)
-        code, res = self._request(
-            "/items", "POST", {"item": data}, content_type=JSON_MIME
-        )
+        code, res = self._request("/items", "POST", {"item": data}, content_type=JSON_MIME)
         if code == 201:
             return res
         elif code == 409:
@@ -155,9 +149,7 @@ class _Base(_Service):
             data["key"] = key
 
         insert_ttl(data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at)
-        code, res = self._request(
-            "/items", "PUT", {"items": [data]}, content_type=JSON_MIME
-        )
+        code, res = self._request("/items", "PUT", {"items": [data]}, content_type=JSON_MIME)
         return res["processed"]["items"][0] if res and code == 207 else None
 
     def put_many(
@@ -173,14 +165,10 @@ class _Base(_Service):
             data = i
             if not isinstance(i, dict):
                 data = {"value": i}
-            insert_ttl(
-                data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at
-            )
+            insert_ttl(data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at)
             _items.append(data)
 
-        _, res = self._request(
-            "/items", "PUT", {"items": _items}, content_type=JSON_MIME
-        )
+        _, res = self._request("/items", "PUT", {"items": _items}, content_type=JSON_MIME)
         return res
 
     def _fetch(
@@ -263,9 +251,7 @@ class _Base(_Service):
         )
 
         encoded_key = quote(key, safe="")
-        code, _ = self._request(
-            "/items/{}".format(encoded_key), "PATCH", payload, content_type=JSON_MIME
-        )
+        code, _ = self._request("/items/{}".format(encoded_key), "PATCH", payload, content_type=JSON_MIME)
         if code == 200:
             return None
         elif code == 404:

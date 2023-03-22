@@ -5,15 +5,15 @@ on:
 
 jobs:
   release:
-   runs-on: ubuntu-18.04
-   steps:
+    runs-on: ubuntu-18.04
+    steps:
    # Get the code into our container
-   - name: Checkout
-     uses: actions/checkout@v3
-     with:
-       persist-credentials: false
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        persist-credentials: false
    # Publish with poetry
-   - name: Publish with poetry
-     uses: JRubics/poetry-publish@v1.16
-     with:
-       pypi_token: ${{ secrets.PYPI_TEST_TOKEN }}
+    - name: Publish with poetry
+      uses: JRubics/poetry-publish@v1.16
+      with:
+        pypi_token: ${{ secrets.PYPI_TEST_TOKEN }}

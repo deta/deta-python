@@ -59,7 +59,6 @@ async def test_put(db):
     assert {"msg": "hello"} == item
 
     for input in ["Hello", 1, True, False, 3.14159265359]:
-
         resp = await db.put(input)
         assert set(resp.keys()) == set(["key", "value"])
 
@@ -149,9 +148,7 @@ async def test_fetch(db, items):
     )
     assert res3 == expectedItem
 
-    res4 = await db.fetch(
-        [{"value?gt": 6}, {"value?lt": 50}], limit=2, last="existing2"
-    )
+    res4 = await db.fetch([{"value?gt": 6}, {"value?lt": 50}], limit=2, last="existing2")
     expectedItem = FetchResponse(
         1,
         None,
@@ -323,9 +320,7 @@ async def test_ttl(db, items):
             # update
             # only if one of expire_in or expire_at
             if cexp_in or cexp_at:
-                await db.update(
-                    None, item.get("key"), expire_in=cexp_in, expire_at=cexp_at
-                )
+                await db.update(None, item.get("key"), expire_in=cexp_in, expire_at=cexp_at)
                 got = await db.get(item.get("key"))
                 assert abs(expected - got.get(BASE_TEST_TTL_ATTRIBUTE)) <= cdelta
         else:
@@ -336,6 +331,4 @@ async def test_ttl(db, items):
             with pytest.raises(error):
                 await db.insert(item, expire_in=cexp_in, expire_at=cexp_at)
             with pytest.raises(error):
-                await db.update(
-                    None, item.get("key"), expire_in=cexp_in, expire_at=cexp_at
-                )
+                await db.update(None, item.get("key"), expire_in=cexp_in, expire_at=cexp_at)

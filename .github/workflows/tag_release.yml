@@ -2,13 +2,13 @@ name: Lint and tag before release
 
 on:
   push:
-   branches:
+    branches:
     - release
 
 jobs:
   lint-and-tag:
-   runs-on: ubuntu-18.04
-   steps:
+    runs-on: ubuntu-18.04
+    steps:
     # Get the code into our container
     - name: Checkout
       uses: actions/checkout@v3
@@ -18,7 +18,7 @@ jobs:
       with:
         cache: pip
         cache-dependency-path: poetry.lock
-        python-version: "3.9"
+        python-version: '3.9'
     # Setup Python
     - name: Setup Poetry
       uses: abatilo/actions-poetry@v2
@@ -27,4 +27,4 @@ jobs:
       run: poetry install --no-interaction
     # Make tag
     - name: Make git tag
-      run: "scripts/tag"
+      run: scripts/tag

@@ -1,3 +1,5 @@
+# Contributor's Guide
+
 ## Setting up your environment
 
 ### Installing the dependencies
@@ -35,7 +37,7 @@ poetry run pytest
 
 🎉 Now you are ready to contribute!
 
-### How to contribute
+## How to contribute
 
 1. Git clone and make a feature branch
 1. Make a draft PR

@@ -1,2 +1,3 @@
 # Latest
- * Added changelog
+
+- Added changelog
