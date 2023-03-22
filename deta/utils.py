@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import os
 
 
-def _get_project_key_id(project_key: str = None, project_id: str = None):
+def _get_project_key_id(project_key: str | None = None, project_id: str | None = None) -> tuple[str, str]:
     project_key = project_key or os.getenv("DETA_PROJECT_KEY", "")
 
     if not project_key:

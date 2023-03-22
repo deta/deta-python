@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import http.client
-import os
 import json
+import os
 import socket
 import struct
-import typing
+from typing import Any
 import urllib.error
 
 JSON_MIME = "application/json"
@@ -27,10 +29,13 @@ class _Service:
         self.client = http.client.HTTPSConnection(host, timeout=timeout) if keep_alive else None
 
     def _is_socket_closed(self):
-        if not self.client.sock:
+        if not self.client or not self.client.sock:
             return True
         fmt = "B" * 7 + "I" * 21
-        tcp_info = struct.unpack(fmt, self.client.sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_INFO, 92))
+        tcp_info = struct.unpack(
+            fmt,
+            self.client.sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_INFO, 92),
+        )
         # 8 = CLOSE_WAIT
         if len(tcp_info) > 0 and tcp_info[0] == 8:
             return True
@@ -40,9 +45,9 @@ class _Service:
         self,
         path: str,
         method: str,
-        data: typing.Union[str, bytes, dict] = None,
-        headers: dict = None,
-        content_type: str = None,
+        data: str | bytes | dict[str, Any] | None = None,
+        headers: dict | None = None,
+        content_type: str | None = None,
         stream: bool = False,
     ):
         url = self.base_path + path
@@ -58,7 +63,7 @@ class _Service:
         try:
             if self.client and os.environ.get("DETA_RUNTIME") == "true" and self._is_socket_closed():
                 self.client.close()
-        except:
+        except Exception:
             pass
 
         # send request
@@ -66,12 +71,14 @@ class _Service:
 
         # response
         res = self._send_request_with_retry(method, url, headers, body)
+        if res is None:
+            return (None, None)
         status = res.status
 
         if status not in [200, 201, 202, 207]:
             # need to read the response so subsequent requests can be sent on the client
             res.read()
-            if not self.keep_alive:
+            if not self.keep_alive and self.client is not None:
                 self.client.close()
             ## return None if not found
             if status == 404:
@@ -83,9 +90,10 @@ class _Service:
             return status, res
 
         ## return json if application/json
-        payload = json.loads(res.read()) if JSON_MIME in res.getheader("content-type") else res.read()
+        content_type = res.getheader("content-type")
+        payload = json.loads(res.read()) if content_type is not None and JSON_MIME in content_type else res.read()
 
-        if not self.keep_alive:
+        if not self.keep_alive and self.client is not None:
             self.client.close()
         return status, payload
 
@@ -93,24 +101,30 @@ class _Service:
         self,
         method: str,
         url: str,
-        headers: dict = None,
-        body: typing.Union[str, bytes, dict] = None,
+        headers: dict[str, Any] | None = None,
+        body: str | bytes | dict[str, Any] | None = None,
         retry=2,  # try at least twice to regain a new connection
-    ):
+    ) -> http.client.HTTPResponse | None:
         reinitializeConnection = False
         while retry > 0:
             try:
                 if not self.keep_alive or reinitializeConnection:
-                    self.client = http.client.HTTPSConnection(host=self.host, timeout=self.timeout)
+                    self.client = http.client.HTTPSConnection(
+                        host=self.host,
+                        timeout=self.timeout,
+                    )
+                if self.client is None:
+                    continue
 
                 self.client.request(
                     method,
                     url,
-                    headers=headers,
-                    body=body,
+                    headers={} if headers is None else headers,
+                    body=body,  # type: ignore[arg-type]
                 )
                 res = self.client.getresponse()
                 return res
             except http.client.RemoteDisconnected:
                 reinitializeConnection = True
                 retry -= 1
+        return None

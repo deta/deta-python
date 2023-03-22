@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import os
 import typing
-from io import BufferedIOBase, TextIOBase, RawIOBase, StringIO, BytesIO
+from io import BufferedIOBase, BytesIO, RawIOBase, StringIO, TextIOBase
 from urllib.parse import quote_plus
 
 from .service import JSON_MIME, _Service
@@ -20,7 +22,7 @@ class DriveStreamingBody:
     def closed(self):
         return self.__stream.closed
 
-    def read(self, size: int = None):
+    def read(self, size: int | None = None):
         return self.__stream.read(size)
 
     def iter_chunks(self, chunk_size: int = 1024):
@@ -41,17 +43,17 @@ class DriveStreamingBody:
         # close stream
         try:
             self.__stream.close()
-        except:
+        except Exception:
             pass
 
 
 class _Drive(_Service):
     def __init__(
         self,
-        name: str = None,
-        project_key: str = None,
-        project_id: str = None,
-        host: str = None,
+        name: str,
+        project_key: str,
+        project_id: str,
+        host: str | None = None,
     ):
         assert name, "No Drive name provided"
         host = host or os.getenv("DETA_DRIVE_HOST") or "drive.deta.sh"
@@ -75,9 +77,9 @@ class _Drive(_Service):
         """
         assert name, "No name provided"
         _, res = self._request(f"/files/download?name={self._quote(name)}", "GET", stream=True)
-        if res:
-            return DriveStreamingBody(res)
-        return None
+        if not isinstance(res, BufferedIOBase):
+            return None
+        return DriveStreamingBody(res)
 
     def delete_many(self, names: typing.List[str]):
         """Delete many files from drive in single request.
@@ -89,7 +91,7 @@ class _Drive(_Service):
         _, res = self._request("/files", "DELETE", {"names": names}, content_type=JSON_MIME)
         return res
 
-    def delete(self, name: str):
+    def delete(self, name: str) -> str:
         """Delete a file from drive.
         `name` is the name of the file.
         Returns the name of the file deleted.
@@ -101,7 +103,7 @@ class _Drive(_Service):
             raise Exception(f"Failed to delete '{name}':{failed[name]}")
         return name
 
-    def list(self, limit: int = 1000, prefix: str = None, last: str = None):
+    def list(self, limit: int = 1000, prefix: str | None = None, last: str | None = None):
         """List file names from drive.
         `limit` is the limit of number of file names to get, defaults to 1000.
         `prefix` is the prefix  of file names.
@@ -118,7 +120,7 @@ class _Drive(_Service):
 
     def _start_upload(self, name: str):
         _, res = self._request(f"/uploads?name={self._quote(name)}", "POST")
-        return res["upload_id"]
+        return res["upload_id"]  # type: ignore
 
     def _finish_upload(self, name: str, upload_id: str):
         self._request(f"/uploads/{upload_id}?name={self._quote(name)}", "PATCH")
@@ -129,10 +131,10 @@ class _Drive(_Service):
     def _upload_part(
         self,
         name: str,
-        chunk: bytes,
+        chunk: str | bytes,
         upload_id: str,
         part: int,
-        content_type: str = None,
+        content_type: str | None = None,
     ):
         self._request(
             f"/uploads/{upload_id}/parts?name={self._quote(name)}&part={part}",
@@ -141,7 +143,10 @@ class _Drive(_Service):
             content_type=content_type,
         )
 
-    def _get_content_stream(self, data: typing.Union[str, bytes, TextIOBase, BufferedIOBase, RawIOBase]):
+    def _get_content_stream(
+        self,
+        data: str | bytes | TextIOBase | BufferedIOBase | RawIOBase,
+    ):
         if isinstance(data, str):
             return StringIO(data)
         elif isinstance(data, bytes):
@@ -151,10 +156,10 @@ class _Drive(_Service):
     def put(
         self,
         name: str,
-        data: typing.Union[str, bytes, TextIOBase, BufferedIOBase, RawIOBase] = None,
+        data: str | bytes | TextIOBase | BufferedIOBase | RawIOBase | None = None,
         *,
-        path: str = None,
-        content_type: str = None,
+        path: str | None = None,
+        content_type: str | None = None,
     ) -> str:
         """Put a file in drive.
         `name` is the name of the file.
@@ -163,7 +168,8 @@ class _Drive(_Service):
         Returns the name of the file.
         """
         assert name, "No name provided"
-        assert path or data, "No data or path provided"
+        assert path, "No data or path provided"
+        assert data, "No data or path provided"
         assert not (path and data), "Both path and data provided"
 
         # start upload

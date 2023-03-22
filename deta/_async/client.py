@@ -1,12 +1,14 @@
-import typing
+from __future__ import annotations
 
 import datetime
 import os
-import aiohttp
+from typing import Any
 from urllib.parse import quote
 
+import aiohttp
+
+from deta.base import BASE_TTL_ATTTRIBUTE, FetchResponse, Util, insert_ttl
 from deta.utils import _get_project_key_id
-from deta.base import FetchResponse, Util, insert_ttl, BASE_TTL_ATTTRIBUTE
 
 
 def AsyncBase(name: str):
@@ -15,7 +17,13 @@ def AsyncBase(name: str):
 
 
 class _AsyncBase:
-    def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
+    def __init__(
+        self,
+        name: str,
+        project_key: str,
+        project_id: str,
+        host: str | None = None,
+    ) -> None:
         if not project_key:
             raise AssertionError("No Base name provided")
 
@@ -56,11 +64,11 @@ class _AsyncBase:
 
     async def insert(
         self,
-        data: typing.Union[dict, list, str, int, bool],
-        key: str = None,
+        data: dict[str, Any] | list[Any] | str | int | bool,
+        key: str | None = None,
         *,
-        expire_in: int = None,
-        expire_at: typing.Union[int, float, datetime.datetime] = None,
+        expire_in: int | None = None,
+        expire_at: int | float | datetime.datetime | None = None,
     ):
         if not isinstance(data, dict):
             data = {"value": data}
@@ -76,11 +84,11 @@ class _AsyncBase:
 
     async def put(
         self,
-        data: typing.Union[dict, list, str, int, bool],
-        key: str = None,
+        data: dict[str, Any] | list[Any] | str | int | bool,
+        key: str | None = None,
         *,
-        expire_in: int = None,
-        expire_at: typing.Union[int, float, datetime.datetime] = None,
+        expire_in: int | None = None,
+        expire_at: int | float | datetime.datetime | None = None,
     ):
         if not isinstance(data, dict):
             data = {"value": data}
@@ -100,10 +108,10 @@ class _AsyncBase:
 
     async def put_many(
         self,
-        items: typing.List[typing.Union[dict, list, str, int, bool]],
+        items: list[dict[str, Any] | list[Any] | str | int | bool],
         *,
-        expire_in: int = None,
-        expire_at: typing.Union[int, float, datetime.datetime] = None,
+        expire_in: int | None = None,
+        expire_at: int | float | datetime.datetime | None = None,
     ):
         if len(items) > 25:
             raise AssertionError("We can't put more than 25 items at a time.")
@@ -120,12 +128,12 @@ class _AsyncBase:
 
     async def fetch(
         self,
-        query: typing.Union[dict, list] = None,
+        query: dict[str, Any] | list[Any] | None = None,
         *,
         limit: int = 1000,
-        last: str = None,
+        last: str | None = None,
     ):
-        payload = {}
+        payload: dict[str, Any] = {}
         if query:
             payload["query"] = query if isinstance(query, list) else [query]
         if limit:
@@ -142,13 +150,13 @@ class _AsyncBase:
         updates: dict,
         key: str,
         *,
-        expire_in: int = None,
-        expire_at: typing.Union[int, float, datetime.datetime] = None,
+        expire_in: int | None = None,
+        expire_at: int | float | datetime.datetime | None = None,
     ):
         if key == "":
             raise ValueError("Key is empty")
 
-        payload = {
+        payload: dict[str, Any] = {
             "set": {},
             "increment": {},
             "append": {},
