@@ -5,10 +5,13 @@ import json
 import os
 import socket
 import struct
-from typing import Any
+from typing import Any, Optional, Union
 import urllib.error
 
 JSON_MIME = "application/json"
+
+_SERVICE_DATA_TYPE = Union[str, bytes, dict[str, Any]]
+_SERVICE_RESPONSE_TYPE = Optional[Union[http.client.HTTPResponse, bytes, Any]]
 
 
 class _Service:
@@ -20,15 +23,15 @@ class _Service:
         name: str,
         timeout: int,
         keep_alive: bool = True,
-    ):
+    ) -> None:
         self.project_key = project_key
-        self.base_path = "/v1/{0}/{1}".format(project_id, name)
+        self.base_path = f"/v1/{project_id}/{name}"
         self.host = host
         self.timeout = timeout
         self.keep_alive = keep_alive
         self.client = http.client.HTTPSConnection(host, timeout=timeout) if keep_alive else None
 
-    def _is_socket_closed(self):
+    def _is_socket_closed(self) -> bool:
         if not self.client or not self.client.sock:
             return True
         fmt = "B" * 7 + "I" * 21
@@ -45,11 +48,11 @@ class _Service:
         self,
         path: str,
         method: str,
-        data: str | bytes | dict[str, Any] | None = None,
-        headers: dict | None = None,
+        data: _SERVICE_DATA_TYPE | None = None,
+        headers: dict[str, Any] | None = None,
         content_type: str | None = None,
         stream: bool = False,
-    ):
+    ) -> tuple[int | None, _SERVICE_RESPONSE_TYPE]:
         url = self.base_path + path
         headers = headers or {}
         headers["X-Api-Key"] = self.project_key
@@ -102,8 +105,8 @@ class _Service:
         method: str,
         url: str,
         headers: dict[str, Any] | None = None,
-        body: str | bytes | dict[str, Any] | None = None,
-        retry=2,  # try at least twice to regain a new connection
+        body: _SERVICE_DATA_TYPE | None = None,
+        retry: int = 2,  # try at least twice to regain a new connection
     ) -> http.client.HTTPResponse | None:
         reinitializeConnection = False
         while retry > 0:

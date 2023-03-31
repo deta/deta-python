@@ -18,7 +18,7 @@ except Exception:
     pass
 
 try:
-    from ._async.client import AsyncBase  # noqa: F401
+    from ._async.client import AsyncBase  # type: ignore[attr-defined]
 except ImportError:
     pass
 
@@ -57,7 +57,7 @@ class Deta:
 
         return _AsyncBase(name, self.project_key, self.project_id, host)
 
-    def Drive(self, name: str, host: str | None = None):
+    def Drive(self, name: str, host: str | None = None) -> _Drive:
         return _Drive(
             name=name,
             project_key=self.project_key,
@@ -65,17 +65,28 @@ class Deta:
             host=host,
         )
 
-    def send_email(self, to, subject, message, charset="UTF-8"):
+    def send_email(
+        self,
+        to: str | list[str],
+        subject: str,
+        message: str,
+        charset: str = "UTF-8",
+    ) -> None:
         return send_email(to, subject, message, charset)
 
 
-def send_email(to, subject, message, charset="UTF-8"):
+def send_email(
+    to: str | list[str],
+    subject: str,
+    message: str,
+    charset: str = "UTF-8",
+) -> None:
     pid = os.getenv("AWS_LAMBDA_FUNCTION_NAME")
     url = os.getenv("DETA_MAILER_URL")
     api_key = os.getenv("DETA_PROJECT_KEY")
     endpoint = f"{url}/mail/{pid}"
 
-    to = to if type(to) == list else [to]
+    to = to if isinstance(to, list) else [to]
     data = {
         "to": to,
         "subject": subject,

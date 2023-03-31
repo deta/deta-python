@@ -2,18 +2,15 @@ from __future__ import annotations
 
 import datetime
 import os
-from typing import Any
+from typing import Any, Optional, Union
 from urllib.parse import quote
 
 import aiohttp
 
 from deta.base import BASE_TTL_ATTTRIBUTE, FetchResponse, Util, insert_ttl
-from deta.utils import _get_project_key_id
 
-
-def AsyncBase(name: str):
-    project_key, project_id = _get_project_key_id()
-    return _AsyncBase(name, project_key, project_id)
+_ASYNC_CLIENT_DATA_TYPE = Union[dict[str, Any], list[Any], str, int, bool]
+_ASYNC_CLIENT_RESPONSE_TYPE = Optional[Any]
 
 
 class _AsyncBase:
@@ -44,7 +41,7 @@ class _AsyncBase:
     async def close(self) -> None:
         await self._session.close()
 
-    async def get(self, key: str):
+    async def get(self, key: str) -> _ASYNC_CLIENT_RESPONSE_TYPE | None:
         key = quote(key, safe="")
 
         try:
@@ -52,11 +49,11 @@ class _AsyncBase:
                 return await resp.json()
         except aiohttp.ClientResponseError as e:
             if e.status == 404:
-                return
+                return None
             else:
                 raise e
 
-    async def delete(self, key: str):
+    async def delete(self, key: str) -> None:
         key = quote(key, safe="")
 
         async with self._session.delete(f"{self._base_url}/items/{key}"):
@@ -64,12 +61,12 @@ class _AsyncBase:
 
     async def insert(
         self,
-        data: dict[str, Any] | list[Any] | str | int | bool,
+        data: _ASYNC_CLIENT_DATA_TYPE,
         key: str | None = None,
         *,
         expire_in: int | None = None,
         expire_at: int | float | datetime.datetime | None = None,
-    ):
+    ) -> _ASYNC_CLIENT_RESPONSE_TYPE:
         if not isinstance(data, dict):
             data = {"value": data}
         else:
@@ -84,12 +81,12 @@ class _AsyncBase:
 
     async def put(
         self,
-        data: dict[str, Any] | list[Any] | str | int | bool,
+        data: _ASYNC_CLIENT_DATA_TYPE,
         key: str | None = None,
         *,
         expire_in: int | None = None,
         expire_at: int | float | datetime.datetime | None = None,
-    ):
+    ) -> _ASYNC_CLIENT_RESPONSE_TYPE | None:
         if not isinstance(data, dict):
             data = {"value": data}
         else:
@@ -108,19 +105,22 @@ class _AsyncBase:
 
     async def put_many(
         self,
-        items: list[dict[str, Any] | list[Any] | str | int | bool],
+        items: list[_ASYNC_CLIENT_DATA_TYPE],
         *,
         expire_in: int | None = None,
         expire_at: int | float | datetime.datetime | None = None,
-    ):
+    ) -> _ASYNC_CLIENT_RESPONSE_TYPE:
         if len(items) > 25:
             raise AssertionError("We can't put more than 25 items at a time.")
         _items = []
         for i in items:
-            data = i
-            if not isinstance(i, dict):
-                data = {"value": i}
-            insert_ttl(data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at)
+            data = i if isinstance(i, dict) else {"value": i}
+            insert_ttl(
+                data,
+                self.__ttl_attribute,
+                expire_in=expire_in,
+                expire_at=expire_at,
+            )
             _items.append(data)
 
         async with self._session.put(f"{self._base_url}/items", json={"items": _items}) as resp:
@@ -132,7 +132,7 @@ class _AsyncBase:
         *,
         limit: int = 1000,
         last: str | None = None,
-    ):
+    ) -> FetchResponse:
         payload: dict[str, Any] = {}
         if query:
             payload["query"] = query if isinstance(query, list) else [query]
@@ -147,12 +147,12 @@ class _AsyncBase:
 
     async def update(
         self,
-        updates: dict,
+        updates: dict[str, Any],
         key: str,
         *,
         expire_in: int | None = None,
         expire_at: int | float | datetime.datetime | None = None,
-    ):
+    ) -> None:
         if key == "":
             raise ValueError("Key is empty")
 

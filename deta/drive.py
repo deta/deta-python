@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import os
-import typing
-from io import BufferedIOBase, BytesIO, RawIOBase, StringIO, TextIOBase
+from typing import IO, Generator, Union
+from io import BufferedIOBase, BufferedReader, BytesIO, RawIOBase, StringIO, TextIOBase
 from urllib.parse import quote_plus
 
-from .service import JSON_MIME, _Service
+from .service import _SERVICE_RESPONSE_TYPE, JSON_MIME, _Service
 
 # 10 MB upload chunk size
 UPLOAD_CHUNK_SIZE = 1024 * 1024 * 10
@@ -13,33 +13,35 @@ UPLOAD_CHUNK_SIZE = 1024 * 1024 * 10
 # timeout for Drive service in seconds
 DRIVE_SERVICE_TIMEOUT = 300
 
+_DRIVE_DATA_TYPE = Union[str, bytes, TextIOBase, BufferedIOBase, RawIOBase]
+
 
 class DriveStreamingBody:
-    def __init__(self, res: BufferedIOBase):
+    def __init__(self, res: BufferedIOBase) -> None:
         self.__stream = res
 
     @property
-    def closed(self):
+    def closed(self) -> bool:
         return self.__stream.closed
 
-    def read(self, size: int | None = None):
+    def read(self, size: int | None = None) -> bytes:
         return self.__stream.read(size)
 
-    def iter_chunks(self, chunk_size: int = 1024):
+    def iter_chunks(self, chunk_size: int = 1024) -> Generator[bytes, None, None]:
         while True:
             chunk = self.__stream.read(chunk_size)
             if not chunk:
                 break
             yield chunk
 
-    def iter_lines(self, chunk_size: int = 1024):
+    def iter_lines(self, chunk_size: int = 1024) -> Generator[bytes, None, None]:
         while True:
             chunk = self.__stream.readline(chunk_size)
             if not chunk:
                 break
             yield chunk
 
-    def close(self):
+    def close(self) -> None:
         # close stream
         try:
             self.__stream.close()
@@ -54,7 +56,7 @@ class _Drive(_Service):
         project_key: str,
         project_id: str,
         host: str | None = None,
-    ):
+    ) -> None:
         assert name, "No Drive name provided"
         host = host or os.getenv("DETA_DRIVE_HOST") or "drive.deta.sh"
 
@@ -67,10 +69,10 @@ class _Drive(_Service):
             keep_alive=False,
         )
 
-    def _quote(self, param: str):
+    def _quote(self, param: str) -> str:
         return quote_plus(param)
 
-    def get(self, name: str):
+    def get(self, name: str) -> DriveStreamingBody | None:
         """Get/Download a file from drive.
         `name` is the name of the file.
         Returns a DriveStreamingBody.
@@ -81,7 +83,7 @@ class _Drive(_Service):
             return None
         return DriveStreamingBody(res)
 
-    def delete_many(self, names: typing.List[str]):
+    def delete_many(self, names: list[str]) -> _SERVICE_RESPONSE_TYPE:
         """Delete many files from drive in single request.
         `names` are the names of the files to be deleted.
         Returns a dict with 'deleted' and 'failed' files.
@@ -98,12 +100,17 @@ class _Drive(_Service):
         """
         assert name, "Name not provided or empty"
         payload = self.delete_many([name])
-        failed = payload.get("failed")
+        failed = payload.get("failed")  # type: ignore[union-attr]
         if failed:
             raise Exception(f"Failed to delete '{name}':{failed[name]}")
         return name
 
-    def list(self, limit: int = 1000, prefix: str | None = None, last: str | None = None):
+    def list(
+        self,
+        limit: int = 1000,
+        prefix: str | None = None,
+        last: str | None = None,
+    ) -> _SERVICE_RESPONSE_TYPE:
         """List file names from drive.
         `limit` is the limit of number of file names to get, defaults to 1000.
         `prefix` is the prefix  of file names.
@@ -118,14 +125,14 @@ class _Drive(_Service):
         _, res = self._request(url, "GET")
         return res
 
-    def _start_upload(self, name: str):
+    def _start_upload(self, name: str) -> str:
         _, res = self._request(f"/uploads?name={self._quote(name)}", "POST")
-        return res["upload_id"]  # type: ignore
+        return str(res["upload_id"])  # type: ignore[call-overload,index]
 
-    def _finish_upload(self, name: str, upload_id: str):
+    def _finish_upload(self, name: str, upload_id: str) -> None:
         self._request(f"/uploads/{upload_id}?name={self._quote(name)}", "PATCH")
 
-    def _abort_upload(self, name: str, upload_id: str):
+    def _abort_upload(self, name: str, upload_id: str) -> None:
         self._request(f"/uploads/{upload_id}?name={self._quote(name)}", "DELETE")
 
     def _upload_part(
@@ -135,7 +142,7 @@ class _Drive(_Service):
         upload_id: str,
         part: int,
         content_type: str | None = None,
-    ):
+    ) -> None:
         self._request(
             f"/uploads/{upload_id}/parts?name={self._quote(name)}&part={part}",
             "POST",
@@ -145,8 +152,8 @@ class _Drive(_Service):
 
     def _get_content_stream(
         self,
-        data: str | bytes | TextIOBase | BufferedIOBase | RawIOBase,
-    ):
+        data: _DRIVE_DATA_TYPE,
+    ) -> IO[str] | IO[bytes] | TextIOBase | BufferedIOBase | RawIOBase:
         if isinstance(data, str):
             return StringIO(data)
         elif isinstance(data, bytes):
@@ -156,7 +163,7 @@ class _Drive(_Service):
     def put(
         self,
         name: str,
-        data: str | bytes | TextIOBase | BufferedIOBase | RawIOBase | None = None,
+        data: _DRIVE_DATA_TYPE | None = None,
         *,
         path: str | None = None,
         content_type: str | None = None,
@@ -174,7 +181,12 @@ class _Drive(_Service):
         # start upload
         upload_id = self._start_upload(name)
 
-        content_stream = open(path, "rb") if path else self._get_content_stream(data)
+        content_stream: BufferedReader | IO[str] | IO[bytes] | TextIOBase | BufferedIOBase | RawIOBase
+        if path:
+            content_stream = open(path, "rb")
+        else:
+            assert data, "No data provided"
+            content_stream = self._get_content_stream(data)
         part = 1
 
         # upload chunks
