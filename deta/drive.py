@@ -168,8 +168,7 @@ class _Drive(_Service):
         Returns the name of the file.
         """
         assert name, "No name provided"
-        assert path, "No data or path provided"
-        assert data, "No data or path provided"
+        assert path or data, "No data or path provided"
         assert not (path and data), "Both path and data provided"
 
         # start upload
