@@ -187,7 +187,7 @@ class _Base(_Service):
         self,
         query: typing.Union[dict, list] = None,
         buffer: int = None,
-        last: str = None,
+        last: typing.Union[bool, None] = None,
     ) -> typing.Optional[typing.Tuple[int, list]]:
         """This is where actual fetch happens."""
         payload = {
@@ -206,7 +206,7 @@ class _Base(_Service):
         query: typing.Union[dict, list] = None,
         *,
         limit: int = 1000,
-        last: str = None,
+        last: typing.Union[bool, None] = None,
     ):
         """
         fetch items from the database.
