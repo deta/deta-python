@@ -1,9 +1,9 @@
-import typing
-
+from typing import Union, List
 import datetime
 import os
-import aiohttp
 from urllib.parse import quote
+
+import aiohttp
 
 from deta.utils import _get_project_key_id
 from deta.base import FetchResponse, Util, insert_ttl, BASE_TTL_ATTTRIBUTE
@@ -15,7 +15,7 @@ def AsyncBase(name: str):
 
 
 class _AsyncBase:
-    def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
+    def __init__(self, name: str, project_key: str, project_id: str, host: Union[str, None] = None):
         if not project_key:
             raise AssertionError("No Base name provided")
 
@@ -56,11 +56,11 @@ class _AsyncBase:
 
     async def insert(
         self,
-        data: typing.Union[dict, list, str, int, bool],
-        key: str = None,
+        data: Union[dict, list, str, int, bool],
+        key: Union[str, None] = None,
         *,
-        expire_in: int = None,
-        expire_at: typing.Union[int, float, datetime.datetime] = None,
+        expire_in: Union[int, None] = None,
+        expire_at: Union[int, float, datetime.datetime, None] = None,
     ):
         if not isinstance(data, dict):
             data = {"value": data}
@@ -70,7 +70,8 @@ class _AsyncBase:
         if key:
             data["key"] = key
 
-        insert_ttl(data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at)
+        insert_ttl(data, self.__ttl_attribute,
+                   expire_in=expire_in, expire_at=expire_at)
         async with self._session.post(
             f"{self._base_url}/items", json={"item": data}
         ) as resp:
@@ -78,11 +79,11 @@ class _AsyncBase:
 
     async def put(
         self,
-        data: typing.Union[dict, list, str, int, bool],
-        key: str = None,
+        data: Union[dict, list, str, int, bool],
+        key: Union[str, None] = None,
         *,
-        expire_in: int = None,
-        expire_at: typing.Union[int, float, datetime.datetime] = None,
+        expire_in: Union[int, None] = None,
+        expire_at: Union[int, float, datetime.datetime, None] = None,
     ):
         if not isinstance(data, dict):
             data = {"value": data}
@@ -92,7 +93,8 @@ class _AsyncBase:
         if key:
             data["key"] = key
 
-        insert_ttl(data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at)
+        insert_ttl(data, self.__ttl_attribute,
+                   expire_in=expire_in, expire_at=expire_at)
         async with self._session.put(
             f"{self._base_url}/items", json={"items": [data]}
         ) as resp:
@@ -104,10 +106,10 @@ class _AsyncBase:
 
     async def put_many(
         self,
-        items: typing.List[typing.Union[dict, list, str, int, bool]],
+        items: List[Union[dict, list, str, int, bool]],
         *,
-        expire_in: int = None,
-        expire_at: typing.Union[int, float, datetime.datetime] = None,
+        expire_in: Union[int, None] = None,
+        expire_at: Union[int, float, datetime.datetime, None] = None,
     ):
         if len(items) > 25:
             raise AssertionError("We can't put more than 25 items at a time.")
@@ -128,10 +130,10 @@ class _AsyncBase:
 
     async def fetch(
         self,
-        query: typing.Union[dict, list] = None,
+        query: Union[dict, list, None] = None,
         *,
         limit: int = 1000,
-        last: str = None,
+        last: Union[str, None] = None,
     ):
         payload = {}
         if query:
@@ -152,8 +154,8 @@ class _AsyncBase:
         updates: dict,
         key: str,
         *,
-        expire_in: int = None,
-        expire_at: typing.Union[int, float, datetime.datetime] = None,
+        expire_in: Union[int, None] = None,
+        expire_at: Union[int, float, datetime.datetime, None] = None,
     ):
         if key == "":
             raise ValueError("Key is empty")
