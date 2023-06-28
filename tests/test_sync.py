@@ -317,6 +317,17 @@ class TestBaseMethods(unittest.TestCase):
         )
         self.assertEqual(res7, expectedItem)
 
+        res8 = self.db.fetch({"value?gte": 7}, sort="desc")
+        expectedItem = FetchResponse(
+            2,
+            None,
+            [
+                {"key": "existing3", "value": 44},
+                {"key": "existing2", "value": 7},
+            ],
+        )
+        self.assertEqual(res8, expectedItem)
+
     def test_update(self):
         self.assertIsNone(self.db.update({"value.name": "spongebob"}, "existing4"))
         expectedItem = {"key": "existing4", "value": {"name": "spongebob"}}
