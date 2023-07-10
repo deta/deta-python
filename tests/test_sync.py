@@ -317,7 +317,7 @@ class TestBaseMethods(unittest.TestCase):
         )
         self.assertEqual(res7, expectedItem)
 
-        res8 = self.db.fetch({"value?gte": 7}, sort="desc")
+        res8 = self.db.fetch({"value?gte": 7}, desc=True)
         expectedItem = FetchResponse(
             2,
             None,

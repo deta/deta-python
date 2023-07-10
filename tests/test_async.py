@@ -183,7 +183,7 @@ async def test_fetch(db, items):
     )
     assert res7 == expectedItem
 
-    res8 = await db.fetch({"value?gte": 7}, sort="desc")
+    res8 = await db.fetch({"value?gte": 7}, desc=True)
     expectedItem = FetchResponse(
         2,
         None,

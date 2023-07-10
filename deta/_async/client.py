@@ -132,7 +132,7 @@ class _AsyncBase:
         *,
         limit: int = 1000,
         last: str = None,
-        sort: typing.Union[str, None] = None,
+        desc: bool = False,
     ):
         payload = {}
         if query:
@@ -141,8 +141,8 @@ class _AsyncBase:
             payload["limit"] = limit
         if last:
             payload["last"] = last
-        if sort:
-            payload["sort"] = sort 
+        if desc:
+            payload["sort"] = "desc" 
 
         async with self._session.post(f"{self._base_url}/query", json=payload) as resp:
             resp_json = await resp.json()
