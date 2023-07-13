@@ -1,6 +1,6 @@
 # Deta Python Library (SDK)
 
-Please use a [supported version of Python](https://devguide.python.org/versions/).  [Read the docs.](https://deta.space/docs)  
+Please use a [supported version of Python](https://devguide.python.org/versions/).  This package requires a minimum of Python 3.6.  [Read the docs.](https://deta.space/docs/en/build/reference/sdk)  
 
 Install from PyPi
 
