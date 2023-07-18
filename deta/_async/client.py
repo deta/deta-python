@@ -132,6 +132,7 @@ class _AsyncBase:
         *,
         limit: int = 1000,
         last: str = None,
+        desc: bool = False,
     ):
         payload = {}
         if query:
@@ -140,6 +141,9 @@ class _AsyncBase:
             payload["limit"] = limit
         if last:
             payload["last"] = last
+        if desc:
+            payload["sort"] = "desc" 
+
         async with self._session.post(f"{self._base_url}/query", json=payload) as resp:
             resp_json = await resp.json()
             paging = resp_json.get("paging")

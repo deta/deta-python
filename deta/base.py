@@ -188,11 +188,13 @@ class _Base(_Service):
         query: typing.Union[dict, list] = None,
         buffer: int = None,
         last: str = None,
+        desc: bool = False, 
     ) -> typing.Optional[typing.Tuple[int, list]]:
         """This is where actual fetch happens."""
         payload = {
             "limit": buffer,
             "last": last if not isinstance(last, bool) else None,
+            "sort": "desc" if desc else "",
         }
 
         if query:
@@ -207,12 +209,13 @@ class _Base(_Service):
         *,
         limit: int = 1000,
         last: str = None,
+        desc: bool = False, 
     ):
         """
         fetch items from the database.
             `query` is an optional filter or list of filters. Without filter, it will return the whole db.
         """
-        _, res = self._fetch(query, limit, last)
+        _, res = self._fetch(query, limit, last, desc)
 
         paging = res.get("paging")
 

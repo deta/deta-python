@@ -183,6 +183,17 @@ async def test_fetch(db, items):
     )
     assert res7 == expectedItem
 
+    res8 = await db.fetch({"value?gte": 7}, desc=True)
+    expectedItem = FetchResponse(
+        2,
+        None,
+        [
+            {"key": "existing3", "value": 44},
+            {"key": "existing2", "value": 7},
+        ],
+    )
+    assert res8 == expectedItem
+
 
 async def test_update(db, items):
     resp = await db.update({"value.name": "spongebob"}, "existing4")
