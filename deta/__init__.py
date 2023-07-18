@@ -20,8 +20,7 @@ try:
 except ImportError:
     pass
 
-__version__ = "1.1.0"
-
+__version__ = "1.2.0"
 
 
 def Base(name: str):
@@ -45,6 +44,7 @@ class Deta:
 
     def AsyncBase(self, name: str, host: str = None):
         from ._async.client import _AsyncBase
+
         return _AsyncBase(name, self.project_key, self.project_id, host)
 
     def Drive(self, name: str, host: str = None):
