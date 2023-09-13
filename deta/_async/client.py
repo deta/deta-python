@@ -93,14 +93,12 @@ class _AsyncBase:
             data["key"] = key
 
         insert_ttl(data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at)
-        async with self._session.put(
-            f"{self._base_url}/items", json={"items": [data]}
-        ) as resp:
+        async with self._session.put(f"{self._base_url}/items", json={"items": [data]}) as resp:
             if resp.status == 207:
                 resp_json = await resp.json()
-                return resp_json["processed"]["items"][0]
-            else:
-                return None
+                if "processed" in resp_json:
+                    return resp_json["processed"]["items"][0]
+            return None
 
     async def put_many(
         self,
