@@ -105,15 +105,15 @@ async def test_get(db, items):
     assert resp == items[0]
 
     resp = await db.get("key_does_not_exist")
-    assert resp == None
+    assert resp is None
 
 
 async def test_delete(db, items):
     resp = await db.delete(items[0]["key"])
-    assert resp == None
+    assert resp is None
 
     resp = await db.delete("key_does_not_exist")
-    assert resp == None
+    assert resp is None
 
 
 async def test_fetch(db, items):
@@ -183,10 +183,21 @@ async def test_fetch(db, items):
     )
     assert res7 == expectedItem
 
+    res8 = await db.fetch({"value?gte": 7}, desc=True)
+    expectedItem = FetchResponse(
+        2,
+        None,
+        [
+            {"key": "existing3", "value": 44},
+            {"key": "existing2", "value": 7},
+        ],
+    )
+    assert res8 == expectedItem
+
 
 async def test_update(db, items):
     resp = await db.update({"value.name": "spongebob"}, "existing4")
-    assert resp == None
+    assert resp is None
 
     resp = await db.get("existing4")
     expectedItem = {"key": "existing4", "value": {"name": "spongebob"}}
@@ -194,7 +205,7 @@ async def test_update(db, items):
 
     resp = await db.update({"value.name": db.util.trim(), "value.age": 32}, "existing4")
 
-    assert resp == None
+    assert resp is None
     expectedItem = {"key": "existing4", "value": {"age": 32}}
     resp = await db.get("existing4")
 
@@ -207,13 +218,13 @@ async def test_update(db, items):
         },
         "%@#//#!#)#$_",
     )
-    assert resp == None
+    assert resp is None
 
     resp = await db.update(
         {"list": db.util.prepend("x"), "value": db.util.increment(2)},
         "%@#//#!#)#$_",
     )
-    assert resp == None
+    assert resp is None
     expectedItem = {"key": "%@#//#!#)#$_", "list": ["x", "a", "b", "c"], "value": 3}
     resp = await db.get("%@#//#!#)#$_")
     assert resp == expectedItem
@@ -258,7 +269,7 @@ def get_expire_in(expire_in):
 async def test_ttl(db, items):
     item1 = items[0]
     expire_in = 300
-    expire_at = datetime.datetime(2022, 3, 1, 12, 30, 30)
+    expire_at = datetime.datetime.now() + datetime.timedelta(seconds=300)
     delta = 2  # allow time delta of 2 seconds
     test_cases = [
         {

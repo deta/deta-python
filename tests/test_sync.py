@@ -4,6 +4,7 @@ import os
 import random
 import string
 import unittest
+from pathlib import Path
 
 from deta import Deta
 from deta.drive import UPLOAD_CHUNK_SIZE
@@ -206,14 +207,20 @@ class TestBaseMethods(unittest.TestCase):
     def test_put(self):
         item = {"msg": "hello"}
         resp = {"key": "one", "msg": "hello"}
+        example_path = Path(__file__).parent / ".."
         self.assertEqual(self.db.put(item, "one"), resp)
         self.assertEqual(self.db.put(item, "one"), resp)
         self.assertEqual({"msg": "hello"}, item)
+        self.assertEqual(
+            self.db.put({"example_path": example_path}, "example_key"),
+            {"example_path": example_path.resolve().as_posix(), "key": "example_key"}
+        )
         self.assertEqual(set(self.db.put("Hello").keys()), set(["key", "value"]))
         self.assertEqual(set(self.db.put(1).keys()), set(["key", "value"]))
         self.assertEqual(set(self.db.put(True).keys()), set(["key", "value"]))
         self.assertEqual(set(self.db.put(False).keys()), set(["key", "value"]))
         self.assertEqual(set(self.db.put(3.14159265359).keys()), set(["key", "value"]))
+        self.assertEqual(set(self.db.put(example_path).keys()), set(["key", "value"]))
 
     @unittest.expectedFailure
     def test_put_fail(self):
@@ -317,6 +324,17 @@ class TestBaseMethods(unittest.TestCase):
         )
         self.assertEqual(res7, expectedItem)
 
+        res8 = self.db.fetch({"value?gte": 7}, desc=True)
+        expectedItem = FetchResponse(
+            2,
+            None,
+            [
+                {"key": "existing3", "value": 44},
+                {"key": "existing2", "value": 7},
+            ],
+        )
+        self.assertEqual(res8, expectedItem)
+
     def test_update(self):
         self.assertIsNone(self.db.update({"value.name": "spongebob"}, "existing4"))
         expectedItem = {"key": "existing4", "value": {"name": "spongebob"}}
@@ -382,7 +400,7 @@ class TestBaseMethods(unittest.TestCase):
 
     def test_ttl(self):
         expire_in = 300
-        expire_at = datetime.datetime(2022, 3, 1, 12, 30, 30)
+        expire_at = datetime.datetime.now() + datetime.timedelta(seconds=300)
         delta = 2  # allow time delta of 2 seconds
         test_cases = [
             {

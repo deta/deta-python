@@ -21,8 +21,7 @@ try:
 except ImportError:
     pass
 
-__version__ = "1.1.0"
-
+__version__ = "1.2.0"
 
 def Base(name: str):
     project_key, project_id = _get_project_key_id()
@@ -45,6 +44,7 @@ class Deta:
 
     def AsyncBase(self, name: str, host: Union[str, None] = None):
         from ._async.client import _AsyncBase
+
         return _AsyncBase(name, self.project_key, self.project_id, host)
 
     def Drive(self, name: str, host: Union[str, None] = None):

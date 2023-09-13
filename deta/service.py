@@ -5,8 +5,17 @@ import socket
 import struct
 from typing import Union
 import urllib.error
+from pathlib import Path
 
 JSON_MIME = "application/json"
+
+
+class CustomJSONEncoder(json.JSONEncoder):
+
+    def default(self, o: typing.Any) -> typing.Any:
+        if isinstance(o, Path):
+            return o.resolve().as_posix()
+        return super().default(o)
 
 
 class _Service:
@@ -75,7 +84,9 @@ class _Service:
             pass
 
         # send request
-        body = json.dumps(data) if content_type == JSON_MIME else data
+        body = json.dumps(
+            data, cls=CustomJSONEncoder
+        ) if content_type == JSON_MIME else data
 
         # response
         res = self._send_request_with_retry(method, url, headers, body)
@@ -92,8 +103,9 @@ class _Service:
             # return None if not found
             if status == 404:
                 return status, None
-            raise urllib.error.HTTPError(
-                url, status, res.reason, res.headers, res.fp)
+            fp = res.fp if res.fp is not None else ''  # FIXME: workaround to fix traceback printing for HTTPError
+            raise urllib.error.HTTPError(url, status, res.reason, res.headers, fp)
+
 
         # if stream return the response and client without reading and closing the client
         if stream:

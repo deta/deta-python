@@ -93,6 +93,7 @@ class _AsyncBase:
         if key:
             data["key"] = key
 
+
         insert_ttl(data, self.__ttl_attribute,
                    expire_in=expire_in, expire_at=expire_at)
         async with self._session.put(
@@ -100,9 +101,9 @@ class _AsyncBase:
         ) as resp:
             if resp.status == 207:
                 resp_json = await resp.json()
-                return resp_json["processed"]["items"][0]
-            else:
-                return None
+                if "processed" in resp_json:
+                    return resp_json["processed"]["items"][0]
+            return None
 
     async def put_many(
         self,
@@ -134,6 +135,7 @@ class _AsyncBase:
         *,
         limit: int = 1000,
         last: Union[str, None] = None,
+        desc: bool = False,
     ):
         payload = {}
         if query:
@@ -142,6 +144,9 @@ class _AsyncBase:
             payload["limit"] = limit
         if last:
             payload["last"] = last
+        if desc:
+            payload["sort"] = "desc" 
+
         async with self._session.post(f"{self._base_url}/query", json=payload) as resp:
             resp_json = await resp.json()
             paging = resp_json.get("paging")

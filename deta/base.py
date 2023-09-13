@@ -160,8 +160,11 @@ class _Base(_Service):
             "/items", "PUT", {"items": [data]}, content_type=JSON_MIME
         )
 
-        if res and code == 207:
-            return res["processed"]["items"][0]  # pyright: ignore
+
+        if code == 207 and "processed" in res:
+            return res["processed"]["items"][0]
+        else:
+            return None
 
     def put_many(
         self,
@@ -191,11 +194,13 @@ class _Base(_Service):
         query: Union[dict, list, None] = None,
         buffer: Union[int, None] = None,
         last: Union[str, None] = None,
-    ):
+        desc: bool = False, 
+    ) -> typing.Optional[typing.Tuple[int, list]]:
         """This is where actual fetch happens."""
         payload = {
             "limit": buffer,
             "last": last if not isinstance(last, bool) else None,
+            "sort": "desc" if desc else "",
         }
 
         if query:
@@ -214,12 +219,16 @@ class _Base(_Service):
         *,
         limit: int = 1000,
         last: Union[str, None] = None,
+        desc: bool = False, 
+
     ):
         """
         fetch items from the database.
             `query` is an optional filter or list of filters. Without filter, it will return the whole db.
         """
-        res = self._fetch(query, limit, last)
+        
+        _, res = self._fetch(query, limit, last, desc)
+
 
         paging = res.get("paging")  # pyright: ignore
 
@@ -238,7 +247,7 @@ class _Base(_Service):
         """
         update an item in the database
         `updates` specifies the attribute names and values to update,add or remove
-        `key` is the kye of the item to be updated
+        `key` is the key of the item to be updated
         """
 
         if key == "":
