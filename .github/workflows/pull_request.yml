@@ -7,7 +7,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     strategy:
       # tests can't run in parallel as they write and read data with same keys
       max-parallel: 1
@@ -16,7 +16,7 @@ jobs:
     steps:
       # Get the code into the container
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       # Setup Python
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -33,4 +33,4 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install pytest pytest-asyncio aiohttp
-          pytest tests 
+          pytest tests
