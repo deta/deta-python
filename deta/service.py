@@ -3,7 +3,7 @@ import os
 import json
 import socket
 import struct
-import typing
+from typing import Union
 import urllib.error
 from pathlib import Path
 
@@ -33,16 +33,17 @@ class _Service:
         self.host = host
         self.timeout = timeout
         self.keep_alive = keep_alive
-        self.client = (
-            http.client.HTTPSConnection(host, timeout=timeout) if keep_alive else None
-        )
+        self.client = (http.client.HTTPSConnection(
+            host, timeout=timeout) if keep_alive else None)
 
     def _is_socket_closed(self):
-        if not self.client.sock:
+        if not self.client or not self.client.sock:
             return True
+
         fmt = "B" * 7 + "I" * 21
         tcp_info = struct.unpack(
-            fmt, self.client.sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_INFO, 92)
+            fmt, self.client.sock.getsockopt(
+                socket.IPPROTO_TCP, socket.TCP_INFO, 92)
         )
         # 8 = CLOSE_WAIT
         if len(tcp_info) > 0 and tcp_info[0] == 8:
@@ -53,16 +54,20 @@ class _Service:
         self,
         path: str,
         method: str,
-        data: typing.Union[str, bytes, dict] = None,
-        headers: dict = None,
-        content_type: str = None,
+        data: Union[str, bytes, dict, None] = None,
+        headers: Union[dict, None] = None,
+        content_type: Union[str, None] = None,
         stream: bool = False,
     ):
+
         url = self.base_path + path
+
         headers = headers or {}
         headers["X-Api-Key"] = self.project_key
+
         if content_type:
             headers["Content-Type"] = content_type
+
         if not self.keep_alive:
             headers["Connection"] = "close"
 
@@ -85,40 +90,45 @@ class _Service:
 
         # response
         res = self._send_request_with_retry(method, url, headers, body)
+
+        assert res
+
         status = res.status
 
         if status not in [200, 201, 202, 207]:
             # need to read the response so subsequent requests can be sent on the client
             res.read()
-            if not self.keep_alive:
+            if not self.keep_alive and self.client:
                 self.client.close()
-            ## return None if not found
+            # return None if not found
             if status == 404:
                 return status, None
             fp = res.fp if res.fp is not None else ''  # FIXME: workaround to fix traceback printing for HTTPError
             raise urllib.error.HTTPError(url, status, res.reason, res.headers, fp)
 
-        ## if stream return the response and client without reading and closing the client
+
+        # if stream return the response and client without reading and closing the client
         if stream:
             return status, res
 
-        ## return json if application/json
-        payload = (
-            json.loads(res.read())
-            if JSON_MIME in res.getheader("content-type")
-            else res.read()
-        )
+        # return json if application/json
+        res_content_type = res.getheader("content-type")
+        if res_content_type and JSON_MIME in res_content_type:
+            payload = json.loads(res.read())
+        else:
+            payload = res.read()
 
-        if not self.keep_alive:
+        if not self.keep_alive and self.client:
             self.client.close()
+
         return status, payload
 
     def _send_request_with_retry(
         self,
         method: str,
         url: str,
-        headers: dict = None,
-        body: typing.Union[str, bytes, dict] = None,
+        headers: Union[dict, None] = None,
+        body: Union[str, bytes, dict, None] = None,
         retry=2,  # try at least twice to regain a new connection
     ):
         reinitializeConnection = False
@@ -129,6 +139,11 @@ class _Service:
                         host=self.host, timeout=self.timeout
                     )
 
+                if headers is None:
+                    headers = {}
+
+                assert self.client
+
                 self.client.request(
                     method,
                     url,
@@ -137,6 +152,7 @@ class _Service:
                 )
                 res = self.client.getresponse()
                 return res
+
             except http.client.RemoteDisconnected:
                 reinitializeConnection = True
                 retry -= 1

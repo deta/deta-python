@@ -1,7 +1,6 @@
 import os
 import datetime
-from re import I
-import typing
+from typing import Union, List
 from urllib.parse import quote
 
 from .service import _Service, JSON_MIME
@@ -62,18 +61,18 @@ class Util:
     def trim(self):
         return self.Trim()
 
-    def increment(self, value: typing.Union[int, float] = None):
+    def increment(self, value: Union[int, float, None] = None):
         return self.Increment(value)
 
-    def append(self, value: typing.Union[dict, list, str, int, float, bool]):
+    def append(self, value: Union[dict, list, str, int, float, bool]):
         return self.Append(value)
 
-    def prepend(self, value: typing.Union[dict, list, str, int, float, bool]):
+    def prepend(self, value: Union[dict, list, str, int, float, bool]):
         return self.Prepend(value)
 
 
 class _Base(_Service):
-    def __init__(self, name: str, project_key: str, project_id: str, host: str = None):
+    def __init__(self, name: str, project_key: str, project_id: str, host: Union[str, None] = None):
         assert name, "No Base name provided"
 
         host = host or os.getenv("DETA_BASE_HOST") or "database.deta.sh"
@@ -110,11 +109,11 @@ class _Base(_Service):
 
     def insert(
         self,
-        data: typing.Union[dict, list, str, int, bool],
-        key: str = None,
+        data: Union[dict, list, str, int, bool],
+        key: Union[str, None] = None,
         *,
-        expire_in: int = None,
-        expire_at: typing.Union[int, float, datetime.datetime] = None,
+        expire_in: Union[int, None] = None,
+        expire_at: Union[int, float, datetime.datetime, None] = None,
     ):
         if not isinstance(data, dict):
             data = {"value": data}
@@ -124,7 +123,8 @@ class _Base(_Service):
         if key:
             data["key"] = key
 
-        insert_ttl(data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at)
+        insert_ttl(data, self.__ttl_attribute,
+                   expire_in=expire_in, expire_at=expire_at)
         code, res = self._request(
             "/items", "POST", {"item": data}, content_type=JSON_MIME
         )
@@ -135,11 +135,11 @@ class _Base(_Service):
 
     def put(
         self,
-        data: typing.Union[dict, list, str, int, bool],
-        key: str = None,
+        data: Union[dict, list, str, int, bool],
+        key: Union[str, None] = None,
         *,
-        expire_in: int = None,
-        expire_at: typing.Union[int, float, datetime.datetime] = None,
+        expire_in: Union[int, None] = None,
+        expire_at: Union[int, float, datetime.datetime, None] = None,
     ):
         """store (put) an item in the database. Overrides an item if key already exists.
         `key` could be provided as function argument or a field in the data dict.
@@ -154,10 +154,12 @@ class _Base(_Service):
         if key:
             data["key"] = key
 
-        insert_ttl(data, self.__ttl_attribute, expire_in=expire_in, expire_at=expire_at)
+        insert_ttl(data, self.__ttl_attribute,
+                   expire_in=expire_in, expire_at=expire_at)
         code, res = self._request(
             "/items", "PUT", {"items": [data]}, content_type=JSON_MIME
         )
+
 
         if code == 207 and "processed" in res:
             return res["processed"]["items"][0]
@@ -166,10 +168,10 @@ class _Base(_Service):
 
     def put_many(
         self,
-        items: typing.List[typing.Union[dict, list, str, int, bool]],
+        items: List[Union[dict, list, str, int, bool]],
         *,
-        expire_in: int = None,
-        expire_at: typing.Union[int, float, datetime.datetime] = None,
+        expire_in: Union[int, None] = None,
+        expire_at: Union[int, float, datetime.datetime, None] = None,
     ):
         assert len(items) <= 25, "We can't put more than 25 items at a time."
         _items = []
@@ -189,9 +191,9 @@ class _Base(_Service):
 
     def _fetch(
         self,
-        query: typing.Union[dict, list] = None,
-        buffer: int = None,
-        last: str = None,
+        query: Union[dict, list, None] = None,
+        buffer: Union[int, None] = None,
+        last: Union[str, None] = None,
         desc: bool = False, 
     ) -> typing.Optional[typing.Tuple[int, list]]:
         """This is where actual fetch happens."""
@@ -204,34 +206,43 @@ class _Base(_Service):
         if query:
             payload["query"] = query if isinstance(query, list) else [query]
 
-        code, res = self._request("/query", "POST", payload, content_type=JSON_MIME)
-        return code, res
+        _, res = self._request(
+            "/query", "POST", payload, content_type=JSON_MIME)
+
+        assert res 
+
+        return res
 
     def fetch(
         self,
-        query: typing.Union[dict, list] = None,
+        query: Union[dict, list, None] = None,
         *,
         limit: int = 1000,
-        last: str = None,
+        last: Union[str, None] = None,
         desc: bool = False, 
+
     ):
         """
         fetch items from the database.
             `query` is an optional filter or list of filters. Without filter, it will return the whole db.
         """
+        
         _, res = self._fetch(query, limit, last, desc)
 
-        paging = res.get("paging")
 
-        return FetchResponse(paging.get("size"), paging.get("last"), res.get("items"))
+        paging = res.get("paging")  # pyright: ignore
+
+        return FetchResponse(paging.get("size"),
+                             paging.get("last"),
+                             res.get("items"))  # pyright: ignore
 
     def update(
         self,
         updates: dict,
         key: str,
         *,
-        expire_in: int = None,
-        expire_at: typing.Union[int, float, datetime.datetime] = None,
+        expire_in: Union[int, None] = None,
+        expire_at: Union[int, float, datetime.datetime, None] = None,
     ):
         """
         update an item in the database
