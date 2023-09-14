@@ -468,7 +468,8 @@ class TestBaseMethods(unittest.TestCase):
             error = case.get("error")
             cdelta = case.get("delta")
 
-            if not case.get("error"):
+            assert item
+            if not error:
                 # put
                 self.db.put(item, expire_in=cexp_in, expire_at=cexp_at)
                 got = self.db.get(item.get("key"))
