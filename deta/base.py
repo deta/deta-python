@@ -1,6 +1,6 @@
 import os
 import datetime
-from typing import Union, List
+from typing import Union, List, Tuple, Optional
 from urllib.parse import quote
 
 from .service import _Service, JSON_MIME
@@ -195,7 +195,7 @@ class _Base(_Service):
         buffer: Union[int, None] = None,
         last: Union[str, None] = None,
         desc: bool = False, 
-    ) -> typing.Optional[typing.Tuple[int, list]]:
+    ) -> Optional[Tuple[int, list]]:
         """This is where actual fetch happens."""
         payload = {
             "limit": buffer,

@@ -64,7 +64,8 @@ class TestDriveMethods(unittest.TestCase):
         for tc in test_cases:
             name = self.drive.put(tc["name"], tc["content"])
             self.assertEqual(name, tc["name"])
-            self.assertEqual(self.drive.get(tc["name"]).read().decode(), tc["content"])
+            self.assertEqual(self.drive.get(
+                tc["name"]).read().decode(), tc["content"])
 
     def test_put_bytes(self):
         test_cases = [
@@ -98,7 +99,8 @@ class TestDriveMethods(unittest.TestCase):
     def test_large_file(self):
         name = "large_binary_file"
         large_binary_file = os.urandom(UPLOAD_CHUNK_SIZE * 2 + 1000)
-        self.assertEqual(self.drive.put("large_binary_file", large_binary_file), name)
+        self.assertEqual(self.drive.put(
+            "large_binary_file", large_binary_file), name)
 
         body = self.drive.get(name)
         binary_stream = io.BytesIO(large_binary_file)
@@ -190,13 +192,15 @@ class TestBaseMethods(unittest.TestCase):
         self.assertIsNotNone(name)
         deta = Deta(key)
         self.db = deta.Base(str(name))
-        self.ttl_attribute = os.getenv("DETA_SDK_TEST_TTL_ATTRIBUTE") or "__expires"
+        self.ttl_attribute = os.getenv(
+            "DETA_SDK_TEST_TTL_ATTRIBUTE") or "__expires"
         self.item1 = {"key": "existing1", "value": "test"}
         self.item2 = {"key": "existing2", "value": 7}
         self.item3 = {"key": "existing3", "value": 44}
         self.item4 = {"key": "existing4", "value": {"name": "patrick"}}
         self.item5 = {"key": "%@#//#!#)#$_", "value": 0, "list": ["a"]}
-        self.db.put_many([self.item1, self.item2, self.item3, self.item4, self.item5])
+        self.db.put_many(
+            [self.item1, self.item2, self.item3, self.item4, self.item5])
 
     def tearDown(self):
         items = self.db.fetch().items
@@ -215,12 +219,15 @@ class TestBaseMethods(unittest.TestCase):
             self.db.put({"example_path": example_path}, "example_key"),
             {"example_path": example_path.resolve().as_posix(), "key": "example_key"}
         )
-        self.assertEqual(set(self.db.put("Hello").keys()), set(["key", "value"]))
+        self.assertEqual(set(self.db.put("Hello").keys()),
+                         set(["key", "value"]))
         self.assertEqual(set(self.db.put(1).keys()), set(["key", "value"]))
         self.assertEqual(set(self.db.put(True).keys()), set(["key", "value"]))
         self.assertEqual(set(self.db.put(False).keys()), set(["key", "value"]))
-        self.assertEqual(set(self.db.put(3.14159265359).keys()), set(["key", "value"]))
-        self.assertEqual(set(self.db.put(example_path).keys()), set(["key", "value"]))
+        self.assertEqual(set(self.db.put(3.14159265359).keys()),
+                         set(["key", "value"]))
+        self.assertEqual(set(self.db.put(example_path).keys()),
+                         set(["key", "value"]))
 
     @unittest.expectedFailure
     def test_put_fail(self):
@@ -228,13 +235,16 @@ class TestBaseMethods(unittest.TestCase):
         self.db.put({"msg": "hello", "key": True})
 
     def test_put_many(self):
-        self.assertEqual(len(self.db.put_many([1, 2, 3])["processed"]["items"]), 3)
-        ok = self.db.put_many([{"msg": "hello"}, {"msg2": "hi"}])["processed"]["items"]
+        self.assertEqual(len(self.db.put_many(
+            [1, 2, 3])["processed"]["items"]), 3)
+        ok = self.db.put_many([{"msg": "hello"}, {"msg2": "hi"}])[
+            "processed"]["items"]
         self.assertEqual(len(ok), 2)
 
     @unittest.expectedFailure
     def test_put_many_fail(self):
-        self.db.put_many([{"name": "joe", "key": "ok"}, {"name": "mo", "key": 7}])
+        self.db.put_many(
+            [{"name": "joe", "key": "ok"}, {"name": "mo", "key": 7}])
 
     @unittest.expectedFailure
     def test_put_many_fail_limit(self):
@@ -336,7 +346,8 @@ class TestBaseMethods(unittest.TestCase):
         self.assertEqual(res8, expectedItem)
 
     def test_update(self):
-        self.assertIsNone(self.db.update({"value.name": "spongebob"}, "existing4"))
+        self.assertIsNone(self.db.update(
+            {"value.name": "spongebob"}, "existing4"))
         expectedItem = {"key": "existing4", "value": {"name": "spongebob"}}
         self.assertEqual(self.db.get("existing4"), expectedItem)
 
@@ -360,15 +371,18 @@ class TestBaseMethods(unittest.TestCase):
 
         self.assertIsNone(
             self.db.update(
-                {"list": self.db.util.prepend("x"), "value": self.db.util.increment(2)},
+                {"list": self.db.util.prepend(
+                    "x"), "value": self.db.util.increment(2)},
                 "%@#//#!#)#$_",
             )
         )
-        expectedItem = {"key": "%@#//#!#)#$_", "list": ["x", "a", "b", "c"], "value": 3}
+        expectedItem = {"key": "%@#//#!#)#$_",
+                        "list": ["x", "a", "b", "c"], "value": 3}
         self.assertEqual(self.db.get("%@#//#!#)#$_"), expectedItem)
 
         # key does not exist
-        self.assertRaises(Exception, self.db.update, {"value": "test"}, "doesNotExist")
+        self.assertRaises(Exception, self.db.update, {
+                          "value": "test"}, "doesNotExist")
         # deleting a key
         self.assertRaises(
             Exception,
@@ -377,9 +391,11 @@ class TestBaseMethods(unittest.TestCase):
             "existing4",
         )
         # updating a key
-        self.assertRaises(Exception, self.db.update, {"key": "test"}, "existing4")
+        self.assertRaises(Exception, self.db.update, {
+                          "key": "test"}, "existing4")
         # upper hierarchy does not exist
-        self.assertRaises(Exception, self.db.update, {"profile.age": 32}, "existing4")
+        self.assertRaises(Exception, self.db.update, {
+                          "profile.age": 32}, "existing4")
         # no attributes specified
         self.assertRaises(Exception, self.db.update, {}, "existing4")
 
@@ -462,7 +478,8 @@ class TestBaseMethods(unittest.TestCase):
 
                 # insert
                 # need to udpate key as insert does not allow pre existing key
-                item["key"] = "".join(random.choices(string.ascii_lowercase, k=6))
+                item["key"] = "".join(random.choices(
+                    string.ascii_lowercase, k=6))
                 self.db.insert(item, expire_in=cexp_in, expire_at=cexp_at)
                 got = self.db.get(item.get("key"))
                 self.assertAlmostEqual(

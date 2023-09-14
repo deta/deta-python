@@ -3,7 +3,7 @@ import os
 import json
 import socket
 import struct
-from typing import Union
+from typing import Union, Any
 import urllib.error
 from pathlib import Path
 
@@ -12,7 +12,7 @@ JSON_MIME = "application/json"
 
 class CustomJSONEncoder(json.JSONEncoder):
 
-    def default(self, o: typing.Any) -> typing.Any:
+    def default(self, o: Any) -> Any:
         if isinstance(o, Path):
             return o.resolve().as_posix()
         return super().default(o)
@@ -103,9 +103,10 @@ class _Service:
             # return None if not found
             if status == 404:
                 return status, None
-            fp = res.fp if res.fp is not None else ''  # FIXME: workaround to fix traceback printing for HTTPError
-            raise urllib.error.HTTPError(url, status, res.reason, res.headers, fp)
-
+            # FIXME: workaround to fix traceback printing for HTTPError
+            fp = res.fp if res.fp is not None else ''
+            raise urllib.error.HTTPError(
+                url, status, res.reason, res.headers, fp)
 
         # if stream return the response and client without reading and closing the client
         if stream:
