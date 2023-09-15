@@ -17,8 +17,8 @@ pytestmark = pytest.mark.asyncio
 
 
 PROJECT_KEY = os.getenv("DETA_SDK_TEST_PROJECT_KEY")
-BASE_NAME = os.getenv("DETA_SDK_TEST_BASE_NAME")
-BASE_TEST_TTL_ATTRIBUTE = os.getenv("DETA_SDK_TEST_TTL_ATTRIBUTE")
+BASE_NAME = os.getenv("DETA_SDK_TEST_BASE_NAME") 
+BASE_TEST_TTL_ATTRIBUTE = os.getenv("DETA_SDK_TEST_TTL_ATTRIBUTE") or "__expires"
 
 
 @pytest.fixture()
@@ -225,7 +225,8 @@ async def test_update(db, items):
         "%@#//#!#)#$_",
     )
     assert resp is None
-    expectedItem = {"key": "%@#//#!#)#$_", "list": ["x", "a", "b", "c"], "value": 3}
+    expectedItem = {"key": "%@#//#!#)#$_",
+                    "list": ["x", "a", "b", "c"], "value": 3}
     resp = await db.get("%@#//#!#)#$_")
     assert resp == expectedItem
 
@@ -313,7 +314,9 @@ async def test_ttl(db, items):
         error = case.get("error")
         cdelta = case.get("delta")
 
-        if not case.get("error"):
+        assert item
+
+        if not error:
             # put
             await db.put(item, expire_in=cexp_in, expire_at=cexp_at)
             got = await db.get(item.get("key"))
@@ -338,7 +341,8 @@ async def test_ttl(db, items):
                     None, item.get("key"), expire_in=cexp_in, expire_at=cexp_at
                 )
                 got = await db.get(item.get("key"))
-                assert abs(expected - got.get(BASE_TEST_TTL_ATTRIBUTE)) <= cdelta
+                assert abs(
+                    expected - got.get(BASE_TEST_TTL_ATTRIBUTE)) <= cdelta
         else:
             with pytest.raises(error):
                 await db.put(item, expire_in=cexp_in, expire_at=cexp_at)

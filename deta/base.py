@@ -1,6 +1,6 @@
 import os
 import datetime
-from typing import Union, List
+from typing import Union, List, Tuple, Optional
 from urllib.parse import quote
 
 from .service import _Service, JSON_MIME
@@ -160,7 +160,6 @@ class _Base(_Service):
             "/items", "PUT", {"items": [data]}, content_type=JSON_MIME
         )
 
-
         if code == 207 and "processed" in res:
             return res["processed"]["items"][0]
         else:
@@ -194,8 +193,8 @@ class _Base(_Service):
         query: Union[dict, list, None] = None,
         buffer: Union[int, None] = None,
         last: Union[str, None] = None,
-        desc: bool = False, 
-    ) -> typing.Optional[typing.Tuple[int, list]]:
+        desc: bool = False,
+    ):
         """This is where actual fetch happens."""
         payload = {
             "limit": buffer,
@@ -209,8 +208,6 @@ class _Base(_Service):
         _, res = self._request(
             "/query", "POST", payload, content_type=JSON_MIME)
 
-        assert res 
-
         return res
 
     def fetch(
@@ -219,16 +216,15 @@ class _Base(_Service):
         *,
         limit: int = 1000,
         last: Union[str, None] = None,
-        desc: bool = False, 
+        desc: bool = False,
 
     ):
         """
         fetch items from the database.
             `query` is an optional filter or list of filters. Without filter, it will return the whole db.
         """
-        
-        _, res = self._fetch(query, limit, last, desc)
 
+        res = self._fetch(query, limit, last, desc)
 
         paging = res.get("paging")  # pyright: ignore
 

@@ -10,18 +10,12 @@ from .utils import _get_project_key_id
 
 
 try:
-    from detalib.app import App  # pyright: ignore
-
-    app = App()
-except Exception:
-    pass
-
-try:
     from ._async.client import AsyncBase  # pyright: ignore
 except ImportError:
     pass
 
 __version__ = "1.2.0"
+
 
 def Base(name: str):
     project_key, project_id = _get_project_key_id()
