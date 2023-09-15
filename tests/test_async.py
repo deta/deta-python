@@ -17,8 +17,8 @@ pytestmark = pytest.mark.asyncio
 
 
 PROJECT_KEY = os.getenv("DETA_SDK_TEST_PROJECT_KEY")
-BASE_NAME = os.getenv("DETA_SDK_TEST_BASE_NAME")
-BASE_TEST_TTL_ATTRIBUTE = os.getenv("DETA_SDK_TEST_TTL_ATTRIBUTE")
+BASE_NAME = os.getenv("DETA_SDK_TEST_BASE_NAME") 
+BASE_TEST_TTL_ATTRIBUTE = os.getenv("DETA_SDK_TEST_TTL_ATTRIBUTE") or "__expires"
 
 
 @pytest.fixture()
