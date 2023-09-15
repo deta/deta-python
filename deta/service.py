@@ -3,7 +3,7 @@ import os
 import json
 import socket
 import struct
-from typing import Union
+from typing import Union, Any
 import urllib.error
 from pathlib import Path
 
@@ -12,7 +12,7 @@ JSON_MIME = "application/json"
 
 class CustomJSONEncoder(json.JSONEncoder):
 
-    def default(self, o: typing.Any) -> typing.Any:
+    def default(self, o: Any) -> Any:
         if isinstance(o, Path):
             return o.resolve().as_posix()
         return super().default(o)
